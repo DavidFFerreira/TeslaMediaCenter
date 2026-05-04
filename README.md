@@ -54,13 +54,6 @@ video.addEventListener('pause', () => {
 
 > **Nota:** O Plex Server precisa de ter CORS permissivo ou estar acessível via HTTPS para funcionar no GitHub Pages. Para uso local na rede Wi-Fi do carro funciona sem restrições.
 
-## Publicar no GitHub Pages
-
-```
-Settings → Pages → Deploy from branch → main / (root) → Save
-```
-
-URL: `https://SEU-USERNAME.github.io/TeslaMediaCenter`
 
 ## ⚠️ Aviso
 
