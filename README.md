@@ -112,6 +112,3 @@ Com o vídeo a tocar, podes usar os botões **◀ Anterior** e **Próximo ▶** 
 
 Este projeto é apenas para fins educativos. Não uses o ecrã do Tesla para ver vídeo enquanto conduzes — é ilegal e perigoso.
 
----
-
-Ficheiro único HTML · Zero dependências · Zero servidor
