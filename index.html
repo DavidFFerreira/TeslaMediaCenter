@@ -389,6 +389,101 @@
     }
     .yt-results-empty { padding: 20px 18px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
 
+    /* ── JELLYFIN ── */
+    #jellyfin-setup {
+      padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px;
+    }
+    .jelly-logo-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+    .jelly-logo-icon {
+      width: 52px; height: 52px; border-radius: 10px;
+      background: linear-gradient(135deg, #0a0015, #15002a);
+      border: 1px solid #00a4dc;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 20px rgba(0,164,220,0.3);
+    }
+    .jelly-logo-text {
+      font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900;
+      background: linear-gradient(135deg, #00a4dc, #aa5cc3);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: 3px;
+    }
+    .jelly-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 460px; line-height: 1.6; }
+    .jelly-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 420px; }
+    .jelly-field-input {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px;
+      padding: 10px 14px; outline: none; transition: border-color 0.2s; width: 100%;
+    }
+    .jelly-field-input:focus { border-color: #00a4dc; }
+    .jelly-field-input::placeholder { color: var(--dim); opacity: 0.5; }
+    .jelly-btn {
+      background: linear-gradient(135deg, #0077aa, #00a4dc);
+      border: none; border-radius: 8px; color: #fff;
+      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; padding: 13px 28px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,164,220,0.3);
+    }
+    .jelly-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,164,220,0.5); }
+    .jelly-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .jelly-btn.secondary {
+      background: transparent; border: 1px solid #00a4dc; color: #00a4dc; box-shadow: none;
+    }
+    .jelly-btn.secondary:hover { background: rgba(0,164,220,0.08); }
+    #jellyfin-error { display: none; color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; }
+    #jellyfin-error.show { display: block; }
+
+    /* Jellyfin library */
+    #jellyfin-library { display: none; }
+    #jellyfin-library.show { display: block; }
+    .jelly-lib-header {
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,164,220,0.04);
+    }
+    .jelly-server-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #00a4dc; }
+    .jelly-sections { display: flex; gap: 8px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+    .jelly-section-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      font-family: 'Exo 2', sans-serif; font-size: 12px; letter-spacing: 1px;
+      padding: 6px 14px; border-radius: 20px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+    }
+    .jelly-section-btn.active { border-color: #00a4dc; color: #00a4dc; background: rgba(0,164,220,0.08); }
+    .jelly-section-btn:hover:not(.active) { border-color: var(--dim); color: var(--text); }
+    .jelly-media-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;
+      padding: 16px 18px; max-height: 380px; overflow-y: auto;
+    }
+    .jelly-media-grid::-webkit-scrollbar { width: 4px; }
+    .jelly-media-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .jelly-media-item {
+      cursor: pointer; border-radius: 8px; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      transition: all 0.2s; display: flex; flex-direction: column;
+    }
+    .jelly-media-item:hover { border-color: #00a4dc; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .jelly-media-thumb {
+      width: 100%; aspect-ratio: 2/3; background: var(--panel);
+      display: flex; align-items: center; justify-content: center; font-size: 32px; overflow: hidden;
+    }
+    .jelly-media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .jelly-media-title { padding: 8px; font-size: 11px; color: var(--text); line-height: 1.3; }
+    .jelly-media-year { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); padding: 0 8px 8px; }
+    .jelly-lib-loading {
+      padding: 48px; text-align: center; font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    /* Jellyfin player */
+    #jellyfin-player-wrap { display: none; flex-direction: column; }
+    #jellyfin-player-wrap.show { display: flex; }
+    #jellyfin-video { width: 100%; max-height: 460px; background: #000; }
+    .jelly-now-playing {
+      padding: 12px 18px; border-top: 1px solid var(--border);
+      background: rgba(0,164,220,0.04);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .badge.jelly { color: #00a4dc; border-color: #00a4dc; }
+    .tab-btn.jelly-tab.active { background: rgba(0,164,220,0.12); color: #00a4dc; box-shadow: 0 0 14px rgba(0,164,220,0.2); }
+
     /* ── IPTV ── */
     .iptv-setup {
       padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px;
@@ -565,6 +660,10 @@
       <div class="s-val off" id="s-plex">DESLIGADO</div>
     </div>
     <div class="status-cell">
+      <div class="s-label">Jellyfin</div>
+      <div class="s-val off" id="s-jelly">DESLIGADO</div>
+    </div>
+    <div class="status-cell">
       <div class="s-label">IPTV</div>
       <div class="s-val off" id="s-iptv">INATIVO</div>
     </div>
@@ -583,6 +682,9 @@
     </button>
     <button class="tab-btn plex-tab" onclick="switchTab('plex', this)">
       <span class="tab-icon">🎬</span> Plex
+    </button>
+    <button class="tab-btn jelly-tab" onclick="switchTab('jelly', this)">
+      <span class="tab-icon">🪼</span> Jellyfin
     </button>
     <button class="tab-btn iptv-tab" onclick="switchTab('iptv', this)">
       <span class="tab-icon">📡</span> IPTV
@@ -633,6 +735,11 @@
       <div class="player-header">
         <span class="player-title">Ficheiro Local — HTML5 Video</span>
         <span class="badge orange">BYPASS ATIVO</span>
+      </div>
+      <!-- Tesla warning -->
+      <div style="margin:14px 18px 0;padding:12px 16px;background:rgba(255,107,0,0.07);border:1px solid rgba(255,107,0,0.3);border-radius:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent2);line-height:1.7">
+        ⚠ <strong>No Tesla esta aba não funciona.</strong> O browser do Tesla não tem acesso à pen USB nem ao sistema de ficheiros local.<br>
+        <span style="color:var(--dim)">Para reproduzir os teus ficheiros no carro usa <strong style="color:var(--plex)">Plex</strong> ou <strong style="color:#00a4dc">Jellyfin</strong> — servem os vídeos da tua biblioteca via rede. Esta aba só funciona no PC ou telemóvel.</span>
       </div>
       <div id="upload-zone"
            onclick="document.getElementById('file-input').click()"
@@ -761,6 +868,97 @@
       <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">Plex API</div><div class="ic-desc">Usa a <code>Plex HTTP API</code> para listar a biblioteca e obter o stream direto com o token.</div></div>
       <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Direct Play</div><div class="ic-desc">Usa <code>/video/:/transcode</code> ou direct play via <code>/library/parts</code> — sem plugin.</div></div>
       <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Wake Lock.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: JELLYFIN ══ -->
+  <div class="tab-panel" id="tab-jelly">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title">Jellyfin — Streaming com Drive Bypass</span>
+        <span class="badge jelly" id="jelly-badge">DESLIGADO</span>
+      </div>
+
+      <!-- Connect screen -->
+      <div id="jellyfin-setup">
+        <div class="jelly-logo-wrap">
+          <div class="jelly-logo-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="url(#jg)"/>
+              <defs><linearGradient id="jg" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#00a4dc"/><stop offset="1" stop-color="#aa5cc3"/></linearGradient></defs>
+            </svg>
+          </div>
+          <span class="jelly-logo-text">JELLYFIN</span>
+        </div>
+        <p class="jelly-desc">Liga ao teu servidor Jellyfin para aceder à tua biblioteca de filmes e séries com o bypass de condução ativo. Gratuito e open-source, sem conta obrigatória.</p>
+
+        <div class="jelly-form">
+          <div class="field-group">
+            <label class="field-label">Endereço do Servidor Jellyfin</label>
+            <input class="jelly-field-input" type="text" id="jelly-server-url"
+              placeholder="http://192.168.1.100:8096">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Utilizador</label>
+            <input class="jelly-field-input" type="text" id="jelly-username"
+              placeholder="O teu utilizador Jellyfin"
+              onkeydown="if(event.key==='Enter') document.getElementById('jelly-password').focus()">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Palavra-passe</label>
+            <input class="jelly-field-input" type="password" id="jelly-password"
+              placeholder="A tua palavra-passe"
+              onkeydown="if(event.key==='Enter') connectJellyfin()">
+          </div>
+          <button class="jelly-btn" id="jelly-connect-btn" onclick="connectJellyfin()">🪼 Ligar ao Jellyfin</button>
+          <div id="jellyfin-error"></div>
+        </div>
+
+        <div style="margin-top:8px;max-width:420px;background:rgba(0,164,220,0.05);border:1px solid rgba(0,164,220,0.15);border-radius:8px;padding:14px 16px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#00a4dc;letter-spacing:2px;margin-bottom:8px">COMO INSTALAR O JELLYFIN</div>
+          <ol style="font-size:12px;color:var(--dim);line-height:1.9;padding-left:18px">
+            <li>Descarrega o <a href="https://jellyfin.org/downloads" target="_blank" style="color:#00a4dc;text-decoration:none">Jellyfin Server</a> para Windows/Mac/Linux/NAS</li>
+            <li>Instala e abre <code style="color:#00a4dc;font-family:'Share Tech Mono',monospace;font-size:10px">http://localhost:8096</code> para configurar</li>
+            <li>Adiciona a tua pasta de filmes/séries como biblioteca</li>
+            <li>Para acesso fora de casa, configura o <em>Remote Access</em> nas definições</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Library -->
+      <div id="jellyfin-library">
+        <div class="jelly-lib-header">
+          <span class="jelly-server-name" id="jelly-server-name">🪼 A carregar...</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn-sm" onclick="jellyRefresh()">↺ Atualizar</button>
+            <button class="btn-logout" onclick="jellyLogout()">Desligar</button>
+          </div>
+        </div>
+        <div class="jelly-sections" id="jelly-sections"></div>
+        <div id="jelly-lib-content"></div>
+      </div>
+
+      <!-- Player -->
+      <div id="jellyfin-player-wrap">
+        <video id="jellyfin-video" controls playsinline></video>
+        <div class="jelly-now-playing">
+          <div class="np-info">
+            <div class="np-title" id="jelly-np-title">—</div>
+            <div class="np-meta" id="jelly-np-meta">—</div>
+          </div>
+          <div class="np-actions">
+            <button class="btn-sm" onclick="closeJellyPlayer()">↩ Biblioteca</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cards">
+      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">Jellyfin API</div><div class="ic-desc">Usa a <code>Jellyfin REST API</code> com autenticação por token — sem plugins nem middleware.</div></div>
+      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Open-Source</div><div class="ic-desc">100% gratuito, sem conta obrigatória, sem limites. Corre no teu servidor ou NAS em casa.</div></div>
+      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Direct Stream</div><div class="ic-desc">Usa <code>/Videos/{id}/stream</code> para direct play — sem transcodificação se o formato for compatível.</div></div>
+      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Wake Lock + Pause Intercept.</div></div>
     </div>
   </div>
 
@@ -1030,7 +1228,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function resumeAllVideos() {
-  ['local-video','plex-video','iptv-video'].forEach(id => {
+  ['local-video','plex-video','jellyfin-video','iptv-video'].forEach(id => {
     const v = document.getElementById(id);
     if (v && v.src && !v.paused) return;
     if (v && v.src) v.play().catch(()=>{});
@@ -1522,6 +1720,197 @@ function ytLoadDirect() {
   ytSearchResults = [{ id: videoId, title: 'Vídeo ' + videoId, channel: '', thumb: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` }];
   ytPlayResult(0);
   document.getElementById('yt-results').classList.remove('show');
+}
+
+// ════════════════════════════════════════
+// JELLYFIN INTEGRATION
+// ════════════════════════════════════════
+let jellyToken = '';
+let jellyServerUrl = '';
+let jellyUserId = '';
+let jellySections = [];
+const jellyPaused = { value: false };
+const JELLY_CLIENT = 'Tesla Media Center';
+const JELLY_DEVICE = 'Tesla';
+const JELLY_DEVICE_ID = 'tesla-media-' + Math.random().toString(36).slice(2);
+const JELLY_VERSION = '2.0';
+
+function jellyAuthHeader() {
+  let auth = `MediaBrowser Client="${JELLY_CLIENT}", Device="${JELLY_DEVICE}", DeviceId="${JELLY_DEVICE_ID}", Version="${JELLY_VERSION}"`;
+  if (jellyToken) auth += `, Token="${jellyToken}"`;
+  return auth;
+}
+
+async function jellyFetch(path, opts = {}) {
+  const url = `${jellyServerUrl}${path}`;
+  const res = await fetch(url, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Emby-Authorization': jellyAuthHeader(),
+      ...(opts.headers || {}),
+    }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function connectJellyfin() {
+  const url = document.getElementById('jelly-server-url').value.trim().replace(/\/$/, '');
+  const username = document.getElementById('jelly-username').value.trim();
+  const password = document.getElementById('jelly-password').value;
+
+  if (!url || !username) { showJellyError('Preenche o URL do servidor e o utilizador.'); return; }
+
+  jellyServerUrl = url;
+  const btn = document.getElementById('jelly-connect-btn');
+  btn.disabled = true; btn.textContent = '⏳ A ligar...';
+
+  try {
+    const data = await jellyFetch('/Users/AuthenticateByName', {
+      method: 'POST',
+      body: JSON.stringify({ Username: username, Pw: password })
+    });
+    jellyToken = data.AccessToken;
+    jellyUserId = data.User?.Id;
+    await fetchJellyLibrary(data.User?.Name || username);
+  } catch(e) {
+    showJellyError('Não foi possível ligar. Verifica o URL, utilizador e palavra-passe.');
+  } finally {
+    btn.disabled = false; btn.textContent = '🪼 Ligar ao Jellyfin';
+  }
+}
+
+function showJellyError(msg) {
+  const el = document.getElementById('jellyfin-error');
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+async function fetchJellyLibrary(serverName) {
+  document.getElementById('jellyfin-setup').style.display = 'none';
+  document.getElementById('jellyfin-library').classList.add('show');
+  document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><div class="pin-spinner" style="border-top-color:#00a4dc"></div><span>A carregar biblioteca...</span></div>';
+
+  try {
+    // Get views (libraries)
+    const views = await jellyFetch(`/Users/${jellyUserId}/Views`);
+    jellySections = (views.Items || []).filter(v => ['movies','tvshows','music','homevideos'].includes(v.CollectionType));
+
+    document.getElementById('jelly-server-name').textContent = '🪼 ' + serverName;
+
+    const sectionsEl = document.getElementById('jelly-sections');
+    sectionsEl.innerHTML = '';
+    jellySections.forEach((sec, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'jelly-section-btn' + (i === 0 ? ' active' : '');
+      btn.textContent = sec.Name;
+      btn.onclick = () => {
+        document.querySelectorAll('.jelly-section-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadJellySection(sec.Id);
+      };
+      sectionsEl.appendChild(btn);
+    });
+
+    if (jellySections.length) loadJellySection(jellySections[0].Id);
+    else document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><span>Nenhuma biblioteca encontrada.</span></div>';
+
+    setStatus('s-jelly', 'LIGADO', '');
+    document.getElementById('jelly-badge').textContent = 'LIGADO';
+  } catch(e) {
+    document.getElementById('jellyfin-setup').style.display = 'flex';
+    document.getElementById('jellyfin-library').classList.remove('show');
+    showJellyError('Erro ao carregar biblioteca: ' + e.message);
+  }
+}
+
+async function loadJellySection(parentId) {
+  document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><div class="pin-spinner" style="border-top-color:#00a4dc"></div><span>A carregar...</span></div>';
+  try {
+    const data = await jellyFetch(`/Users/${jellyUserId}/Items?ParentId=${parentId}&Recursive=true&IncludeItemTypes=Movie,Episode,Video&Fields=Overview,MediaSources&SortBy=SortName&SortOrder=Ascending&Limit=100`);
+    renderJellyGrid(data.Items || []);
+  } catch(e) {
+    document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><span style="color:var(--accent2)">Erro ao carregar secção.</span></div>';
+  }
+}
+
+function renderJellyGrid(items) {
+  if (!items.length) {
+    document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><span>Biblioteca vazia.</span></div>';
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'jelly-media-grid';
+
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'jelly-media-item';
+    const thumbUrl = `${jellyServerUrl}/Items/${item.Id}/Images/Primary?maxHeight=240&quality=80&api_key=${jellyToken}`;
+    el.innerHTML = `
+      <div class="jelly-media-thumb">
+        <img src="${thumbUrl}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='🎬'">
+      </div>
+      <div class="jelly-media-title">${item.Name || 'Sem título'}</div>
+      ${item.ProductionYear ? `<div class="jelly-media-year">${item.ProductionYear}</div>` : ''}
+    `;
+    el.onclick = () => playJellyItem(item);
+    grid.appendChild(el);
+  });
+
+  document.getElementById('jelly-lib-content').innerHTML = '';
+  document.getElementById('jelly-lib-content').appendChild(grid);
+}
+
+async function playJellyItem(item) {
+  try {
+    // Get playback info for direct stream URL
+    const info = await jellyFetch(`/Items/${item.Id}/PlaybackInfo?UserId=${jellyUserId}`, { method: 'POST', body: JSON.stringify({ DeviceProfile: {} }) });
+    const mediaSource = info?.MediaSources?.[0];
+    if (!mediaSource) throw new Error('Sem fonte de media.');
+
+    // Build direct stream URL
+    const streamUrl = `${jellyServerUrl}/Videos/${item.Id}/stream?Static=true&MediaSourceId=${mediaSource.Id}&api_key=${jellyToken}`;
+
+    const video = document.getElementById('jellyfin-video');
+    video.src = streamUrl;
+
+    document.getElementById('jellyfin-library').classList.remove('show');
+    document.getElementById('jellyfin-player-wrap').classList.add('show');
+    document.getElementById('jelly-np-title').textContent = item.Name;
+    document.getElementById('jelly-np-meta').textContent =
+      [item.ProductionYear, item.RunTimeTicks ? Math.round(item.RunTimeTicks / 600000000) + 'min' : null].filter(Boolean).join(' · ');
+
+    installBypass(video, jellyPaused);
+    video.addEventListener('click', () => { jellyPaused.value = !video.paused; });
+    ensureAudio(video);
+    video.play().catch(() => {});
+  } catch(e) {
+    alert('Erro ao iniciar o vídeo: ' + e.message);
+  }
+}
+
+function closeJellyPlayer() {
+  const video = document.getElementById('jellyfin-video');
+  video.pause(); video.src = '';
+  document.getElementById('jellyfin-player-wrap').classList.remove('show');
+  document.getElementById('jellyfin-library').classList.add('show');
+}
+
+function jellyLogout() {
+  jellyToken = ''; jellyServerUrl = ''; jellyUserId = ''; jellySections = [];
+  const video = document.getElementById('jellyfin-video');
+  video.pause(); video.src = '';
+  document.getElementById('jellyfin-library').classList.remove('show');
+  document.getElementById('jellyfin-player-wrap').classList.remove('show');
+  document.getElementById('jellyfin-setup').style.display = 'flex';
+  setStatus('s-jelly', 'DESLIGADO', 'off');
+  document.getElementById('jelly-badge').textContent = 'DESLIGADO';
+}
+
+function jellyRefresh() {
+  if (jellySections.length) loadJellySection(jellySections[0].Id);
 }
 
 // ════════════════════════════════════════
