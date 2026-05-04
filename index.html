@@ -100,6 +100,7 @@
     .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
     .tab-btn.active { background: rgba(232,168,0,0.12); color: var(--accent); box-shadow: 0 0 14px rgba(232,168,0,0.15); }
     .tab-btn.plex-tab.active { background: rgba(229,160,13,0.15); color: var(--plex); box-shadow: 0 0 14px rgba(229,160,13,0.2); }
+    .tab-btn.iptv-tab.active { background: rgba(0,180,216,0.12); color: var(--blue); box-shadow: 0 0 14px rgba(0,180,216,0.2); }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
@@ -340,6 +341,163 @@
     footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 2px; line-height: 2; }
     footer a { color: var(--accent); text-decoration: none; }
 
+    /* ── YOUTUBE SEARCH ── */
+    .yt-search-bar {
+      display: flex; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+    .yt-search-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px;
+      padding: 9px 14px; outline: none; transition: border-color 0.2s;
+    }
+    .yt-search-input:focus { border-color: var(--accent); }
+    .yt-search-input::placeholder { color: var(--dim); opacity: 0.5; }
+    .yt-search-btn {
+      background: rgba(232,168,0,0.12); border: 1px solid var(--accent); color: var(--accent);
+      font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      padding: 9px 18px; border-radius: 6px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .yt-search-btn:hover { background: rgba(232,168,0,0.22); box-shadow: var(--glow-y); }
+    .yt-search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .yt-results {
+      display: none; max-height: 340px; overflow-y: auto;
+      border-bottom: 1px solid var(--border);
+    }
+    .yt-results.show { display: block; }
+    .yt-results::-webkit-scrollbar { width: 4px; }
+    .yt-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .yt-result-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 18px; cursor: pointer; border-bottom: 1px solid rgba(23,32,48,0.5);
+      transition: background 0.15s;
+    }
+    .yt-result-item:hover { background: rgba(232,168,0,0.05); }
+    .yt-result-item.active { background: rgba(232,168,0,0.1); border-left: 2px solid var(--accent); }
+    .yt-result-thumb {
+      width: 96px; height: 54px; object-fit: cover; border-radius: 4px;
+      background: var(--surface); flex-shrink: 0;
+    }
+    .yt-result-info { flex: 1; min-width: 0; }
+    .yt-result-title { font-size: 13px; color: var(--text); line-height: 1.35; margin-bottom: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .yt-result-channel { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
+    .yt-results-loading {
+      padding: 24px; text-align: center; font-family: 'Share Tech Mono', monospace;
+      font-size: 11px; color: var(--dim); display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .yt-results-empty { padding: 20px 18px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+
+    /* ── IPTV ── */
+    .iptv-setup {
+      padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px;
+    }
+    .iptv-logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .iptv-logo-icon {
+      width: 48px; height: 48px; border-radius: 8px;
+      background: linear-gradient(135deg, #000d1a, #001a33);
+      border: 1px solid var(--blue);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--glow-b); font-size: 24px;
+    }
+    .iptv-logo-text {
+      font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900;
+      color: var(--blue); letter-spacing: 4px;
+    }
+    .iptv-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 460px; line-height: 1.6; }
+    .iptv-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 480px; }
+    .iptv-btn {
+      background: linear-gradient(135deg, #0077aa, #00b4d8);
+      border: none; border-radius: 8px; color: #fff;
+      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; padding: 13px 28px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,180,216,0.3);
+    }
+    .iptv-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,180,216,0.5); }
+    .iptv-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .iptv-btn.secondary {
+      background: transparent; border: 1px solid var(--blue); color: var(--blue);
+      box-shadow: none;
+    }
+    .iptv-btn.secondary:hover { background: rgba(0,180,216,0.08); box-shadow: var(--glow-b); }
+    #iptv-error { display: none; color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; }
+    #iptv-error.show { display: block; }
+
+    /* IPTV Channel list */
+    #iptv-library { display: none; }
+    #iptv-library.show { display: block; }
+    .iptv-lib-header {
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,180,216,0.04);
+    }
+    .iptv-lib-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--blue); }
+    .iptv-search-wrap { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+    .iptv-filter-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      padding: 7px 12px; outline: none; transition: border-color 0.2s;
+    }
+    .iptv-filter-input:focus { border-color: var(--blue); }
+    .iptv-filter-input::placeholder { color: var(--dim); opacity: 0.5; }
+    .iptv-group-tabs {
+      display: flex; gap: 6px; padding: 10px 18px; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border); max-height: 90px; overflow-y: auto;
+    }
+    .iptv-group-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      font-family: 'Exo 2', sans-serif; font-size: 11px; letter-spacing: 0.5px;
+      padding: 4px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .iptv-group-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(0,180,216,0.08); }
+    .iptv-group-btn:hover:not(.active) { border-color: var(--dim); color: var(--text); }
+    .iptv-channel-list {
+      max-height: 320px; overflow-y: auto;
+    }
+    .iptv-channel-list::-webkit-scrollbar { width: 4px; }
+    .iptv-channel-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .iptv-channel-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 18px; cursor: pointer; border-bottom: 1px solid rgba(23,32,48,0.5);
+      transition: background 0.15s;
+    }
+    .iptv-channel-item:hover { background: rgba(0,180,216,0.05); }
+    .iptv-channel-item.active { background: rgba(0,180,216,0.1); border-left: 2px solid var(--blue); }
+    .iptv-ch-logo {
+      width: 40px; height: 40px; object-fit: contain; border-radius: 4px;
+      background: var(--surface); flex-shrink: 0; border: 1px solid var(--border);
+    }
+    .iptv-ch-logo-placeholder {
+      width: 40px; height: 40px; border-radius: 4px; background: var(--surface);
+      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .iptv-ch-info { flex: 1; min-width: 0; }
+    .iptv-ch-name { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iptv-ch-group { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); margin-top: 2px; }
+    .iptv-ch-play { font-size: 18px; color: var(--dim); flex-shrink: 0; transition: color 0.15s; }
+    .iptv-channel-item:hover .iptv-ch-play { color: var(--blue); }
+    .iptv-lib-loading {
+      padding: 48px; text-align: center; font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+
+    /* IPTV Player */
+    #iptv-player-wrap { display: none; flex-direction: column; }
+    #iptv-player-wrap.show { display: flex; }
+    #iptv-video { width: 100%; max-height: 460px; background: #000; }
+    .iptv-now-playing {
+      padding: 12px 18px; border-top: 1px solid var(--border);
+      background: rgba(0,180,216,0.04);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .iptv-np-badge { font-family: 'Share Tech Mono', monospace; font-size: 9px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--blue); color: var(--blue); }
+    .iptv-no-channels { padding: 32px; text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--dim); }
+    .iptv-ch-count { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
+    .iptv-nav-btns { display: flex; gap: 6px; }
+
     @media (max-width: 600px) {
       .hud { display: none; }
       .logo-text { font-size: 14px; }
@@ -407,6 +565,10 @@
       <div class="s-val off" id="s-plex">DESLIGADO</div>
     </div>
     <div class="status-cell">
+      <div class="s-label">IPTV</div>
+      <div class="s-val off" id="s-iptv">INATIVO</div>
+    </div>
+    <div class="status-cell">
       <button class="sim-btn" id="sim-btn" onclick="toggleSim()">▶ Simular</button>
     </div>
   </div>
@@ -422,6 +584,9 @@
     <button class="tab-btn plex-tab" onclick="switchTab('plex', this)">
       <span class="tab-icon">🎬</span> Plex
     </button>
+    <button class="tab-btn iptv-tab" onclick="switchTab('iptv', this)">
+      <span class="tab-icon">📡</span> IPTV
+    </button>
     <button class="tab-btn" onclick="switchTab('code', this)">
       <span class="tab-icon">&lt;/&gt;</span> Código
     </button>
@@ -431,9 +596,18 @@
   <div class="tab-panel active" id="tab-yt">
     <div class="player-card">
       <div class="player-header">
-        <span class="player-title">YouTube — Lofi Radio (demo)</span>
+        <span class="player-title" id="yt-player-title">YouTube — Lofi Radio (demo)</span>
         <span class="badge green">BYPASS ATIVO</span>
       </div>
+      <!-- Search bar -->
+      <div class="yt-search-bar">
+        <input class="yt-search-input" type="text" id="yt-search-input"
+          placeholder="Pesquisar no YouTube... (ex: lofi, podcast, música)"
+          onkeydown="if(event.key==='Enter') ytSearch()">
+        <button class="yt-search-btn" id="yt-search-btn" onclick="ytSearch()">🔍 Pesquisar</button>
+      </div>
+      <!-- Results -->
+      <div class="yt-results" id="yt-results"></div>
       <div class="yt-wrap">
         <iframe id="yt-frame"
           src="https://www.youtube.com/embed/jfKfPfyJRdk?rel=0&modestbranding=1&enablejsapi=1"
@@ -441,7 +615,7 @@
         </iframe>
       </div>
       <div class="bar">
-        <span class="bar-left">lofi hip hop radio — beats to relax/study</span>
+        <span class="bar-left" id="yt-bar-label">lofi hip hop radio — beats to relax/study</span>
         <span class="bar-right">IFRAME ✓</span>
       </div>
     </div>
@@ -587,6 +761,88 @@
       <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">Plex API</div><div class="ic-desc">Usa a <code>Plex HTTP API</code> para listar a biblioteca e obter o stream direto com o token.</div></div>
       <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Direct Play</div><div class="ic-desc">Usa <code>/video/:/transcode</code> ou direct play via <code>/library/parts</code> — sem plugin.</div></div>
       <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Wake Lock.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: IPTV ══ -->
+  <div class="tab-panel" id="tab-iptv">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title">IPTV — M3U Playlist com Drive Bypass</span>
+        <span class="badge" style="color:var(--blue);border-color:var(--blue)" id="iptv-badge">DESLIGADO</span>
+      </div>
+
+      <!-- Setup screen -->
+      <div class="iptv-setup" id="iptv-setup">
+        <div class="iptv-logo-wrap">
+          <div class="iptv-logo-icon">📡</div>
+          <span class="iptv-logo-text">IPTV</span>
+        </div>
+        <p class="iptv-desc">Cola o URL de uma lista M3U para aceder aos teus canais IPTV com o bypass de condução ativo.</p>
+
+        <div class="iptv-form">
+          <div class="field-group">
+            <label class="field-label">URL da lista M3U</label>
+            <input class="field-input" type="text" id="iptv-m3u-url"
+              placeholder="http://servidor.com/lista.m3u ou .m3u8"
+              onkeydown="if(event.key==='Enter') loadM3U()">
+          </div>
+          <button class="iptv-btn" onclick="loadM3U()" id="iptv-load-btn">📡 Carregar Lista</button>
+          <div id="iptv-error"></div>
+        </div>
+
+        <div style="margin-top:8px;max-width:480px;background:rgba(0,180,216,0.04);border:1px solid rgba(0,180,216,0.15);border-radius:8px;padding:14px 16px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:2px;margin-bottom:8px">FORMATOS SUPORTADOS</div>
+          <div style="font-size:12px;color:var(--dim);line-height:1.8">
+            ✓ Listas <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">.m3u</code> e <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">.m3u8</code><br>
+            ✓ Streams <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">HLS</code> e <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">MP4/TS</code> diretos<br>
+            ✓ Grupos e logos incluídos na lista<br>
+            ⚠ O servidor IPTV precisa de suportar CORS (ou usar proxy)
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Library -->
+      <div id="iptv-library">
+        <div class="iptv-lib-header">
+          <span class="iptv-lib-name" id="iptv-lib-name">📡 Canais</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="iptv-ch-count" id="iptv-ch-count"></span>
+            <button class="btn-sm" onclick="iptvLogout()">✕ Desligar</button>
+          </div>
+        </div>
+        <div class="iptv-search-wrap">
+          <input class="iptv-filter-input" type="text" id="iptv-filter"
+            placeholder="🔍  Filtrar canais..."
+            oninput="filterIptvChannels(this.value)">
+        </div>
+        <div class="iptv-group-tabs" id="iptv-groups"></div>
+        <div id="iptv-channel-list-wrap"></div>
+      </div>
+
+      <!-- Player -->
+      <div id="iptv-player-wrap">
+        <video id="iptv-video" controls playsinline></video>
+        <div class="iptv-now-playing">
+          <div class="np-info">
+            <div class="np-title" id="iptv-np-title">—</div>
+            <div class="np-meta" id="iptv-np-group">—</div>
+          </div>
+          <div class="np-actions iptv-nav-btns">
+            <button class="btn-sm" onclick="iptvPrevChannel()" title="Canal anterior">◀ Anterior</button>
+            <button class="btn-sm" onclick="iptvNextChannel()" title="Próximo canal">Próximo ▶</button>
+            <button class="btn-sm" onclick="closeIptvPlayer()">↩ Lista</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cards">
+      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">M3U Parser</div><div class="ic-desc">Faz parse da lista <code>#EXTM3U</code> diretamente no browser — sem servidor, sem instalação.</div></div>
+      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">HLS Native</div><div class="ic-desc">O Tesla Chromium suporta streams <code>HLS</code> nativamente via <code>&lt;video&gt;</code> — sem plugins.</div></div>
+      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Pause Intercept.</div></div>
+      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Navegação</div><div class="ic-desc">Troca de canal com botões <code>Anterior/Próximo</code> sem sair do ecrã de reprodução.</div></div>
     </div>
   </div>
 
@@ -774,7 +1030,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function resumeAllVideos() {
-  ['local-video','plex-video'].forEach(id => {
+  ['local-video','plex-video','iptv-video'].forEach(id => {
     const v = document.getElementById(id);
     if (v && v.src && !v.paused) return;
     if (v && v.src) v.play().catch(()=>{});
@@ -1136,6 +1392,349 @@ async function discoverServer() {
 function cancelPin() {
   clearInterval(pinPollInterval);
   document.getElementById('pin-box').classList.remove('show');
+}
+
+// ════════════════════════════════════════
+// YOUTUBE SEARCH
+// ════════════════════════════════════════
+let ytCurrentVideoId = 'jfKfPfyJRdk';
+let ytCurrentTitle = 'lofi hip hop radio — beats to relax/study';
+let ytSearchResults = [];
+let ytSelectedIndex = -1;
+
+async function ytSearch() {
+  const query = document.getElementById('yt-search-input').value.trim();
+  if (!query) return;
+
+  const btn = document.getElementById('yt-search-btn');
+  const resultsEl = document.getElementById('yt-results');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ A pesquisar...';
+  resultsEl.classList.add('show');
+  resultsEl.innerHTML = '<div class="yt-results-loading"><div class="pin-spinner" style="border-top-color:var(--accent)"></div><span>A pesquisar no YouTube...</span></div>';
+
+  try {
+    // Use YouTube's suggest/search API via a CORS proxy approach
+    // We'll use the YouTube oEmbed + search suggestions as a workaround
+    // Fetch search results via YouTube's internal suggest endpoint (returns JSON)
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=EgIQAQ%3D%3D')}`;
+    const res = await fetch(proxyUrl);
+    const html = await res.text();
+
+    // Extract ytInitialData from the HTML
+    const match = html.match(/var ytInitialData = ({.*?});<\/script>/s) ||
+                  html.match(/ytInitialData\s*=\s*({.+?});\s*(?:var|window|<\/script)/s);
+
+    if (!match) throw new Error('Não foi possível obter resultados.');
+
+    const data = JSON.parse(match[1]);
+    const contents = data?.contents?.twoColumnSearchResultsRenderer
+      ?.primaryContents?.sectionListRenderer?.contents?.[0]
+      ?.itemSectionRenderer?.contents || [];
+
+    ytSearchResults = contents
+      .filter(item => item.videoRenderer)
+      .map(item => {
+        const v = item.videoRenderer;
+        return {
+          id: v.videoId,
+          title: v.title?.runs?.[0]?.text || 'Sem título',
+          channel: v.ownerText?.runs?.[0]?.text || '',
+          thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+        };
+      }).slice(0, 12);
+
+    renderYtResults(ytSearchResults, query);
+  } catch(e) {
+    // Fallback: use invidious or show manual input
+    resultsEl.innerHTML = `
+      <div class="yt-results-empty">
+        ⚠ Não foi possível pesquisar automaticamente (CORS).<br><br>
+        <span style="color:var(--text)">Cola diretamente um URL ou ID do YouTube:</span><br>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <input class="yt-search-input" id="yt-direct-id" placeholder="URL ou ID do vídeo (ex: dQw4w9WgXcQ)" style="font-size:12px">
+          <button class="yt-search-btn" onclick="ytLoadDirect()">▶ Carregar</button>
+        </div>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Pesquisar';
+  }
+}
+
+function renderYtResults(results, query) {
+  const el = document.getElementById('yt-results');
+  if (!results.length) {
+    el.innerHTML = `<div class="yt-results-empty">Nenhum resultado para "<strong>${query}</strong>". Tenta outra pesquisa.</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  results.forEach((r, i) => {
+    const item = document.createElement('div');
+    item.className = 'yt-result-item' + (i === ytSelectedIndex ? ' active' : '');
+    item.innerHTML = `
+      <img class="yt-result-thumb" src="${r.thumb}" alt="" onerror="this.style.background='var(--surface)';this.src=''">
+      <div class="yt-result-info">
+        <div class="yt-result-title">${r.title}</div>
+        <div class="yt-result-channel">${r.channel}</div>
+      </div>
+      <span style="color:var(--dim);font-size:20px">▶</span>
+    `;
+    item.onclick = () => ytPlayResult(i);
+    el.appendChild(item);
+  });
+}
+
+function ytPlayResult(index) {
+  const r = ytSearchResults[index];
+  if (!r) return;
+  ytSelectedIndex = index;
+
+  // Update active state
+  document.querySelectorAll('.yt-result-item').forEach((el, i) => {
+    el.classList.toggle('active', i === index);
+  });
+
+  // Load in iframe
+  const frame = document.getElementById('yt-frame');
+  frame.src = `https://www.youtube.com/embed/${r.id}?rel=0&modestbranding=1&enablejsapi=1&autoplay=1`;
+  document.getElementById('yt-player-title').textContent = r.title;
+  document.getElementById('yt-bar-label').textContent = r.title + (r.channel ? ' — ' + r.channel : '');
+  ytCurrentVideoId = r.id;
+  ytCurrentTitle = r.title;
+}
+
+function ytLoadDirect() {
+  const val = (document.getElementById('yt-direct-id')?.value || '').trim();
+  if (!val) return;
+
+  // Extract video ID from URL or use as-is
+  let videoId = val;
+  const urlMatch = val.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  if (urlMatch) videoId = urlMatch[1];
+
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+    alert('ID ou URL inválido.');
+    return;
+  }
+
+  ytSearchResults = [{ id: videoId, title: 'Vídeo ' + videoId, channel: '', thumb: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` }];
+  ytPlayResult(0);
+  document.getElementById('yt-results').classList.remove('show');
+}
+
+// ════════════════════════════════════════
+// IPTV M3U
+// ════════════════════════════════════════
+let iptvChannels = [];
+let iptvFiltered = [];
+let iptvCurrentGroup = 'Todos';
+let iptvCurrentIndex = -1;
+const iptvPaused = { value: false };
+
+function parseM3U(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const channels = [];
+  let current = null;
+
+  for (const line of lines) {
+    if (line.startsWith('#EXTINF')) {
+      current = { name: '', group: 'Geral', logo: '', url: '' };
+      // Extract name (after last comma)
+      const nameMatch = line.match(/,(.+)$/);
+      if (nameMatch) current.name = nameMatch[1].trim();
+      // Extract group-title
+      const groupMatch = line.match(/group-title="([^"]*)"/i);
+      if (groupMatch) current.group = groupMatch[1] || 'Geral';
+      // Extract tvg-logo
+      const logoMatch = line.match(/tvg-logo="([^"]*)"/i);
+      if (logoMatch) current.logo = logoMatch[1] || '';
+    } else if (line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('rtsp')) {
+      if (current) {
+        current.url = line;
+        channels.push(current);
+        current = null;
+      }
+    }
+  }
+  return channels;
+}
+
+async function loadM3U() {
+  const url = document.getElementById('iptv-m3u-url').value.trim();
+  if (!url) { showIptvError('Introduz o URL da lista M3U.'); return; }
+
+  const btn = document.getElementById('iptv-load-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ A carregar...';
+  document.getElementById('iptv-error').classList.remove('show');
+
+  try {
+    // Try direct fetch first, fallback to CORS proxy
+    let text;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      text = await res.text();
+    } catch {
+      const proxyRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+      if (!proxyRes.ok) throw new Error('Não foi possível carregar a lista M3U.');
+      text = await proxyRes.text();
+    }
+
+    if (!text.includes('#EXTM3U') && !text.includes('#EXTINF')) {
+      throw new Error('Ficheiro inválido — não parece ser uma lista M3U.');
+    }
+
+    iptvChannels = parseM3U(text);
+    if (!iptvChannels.length) throw new Error('Nenhum canal encontrado na lista.');
+
+    iptvFiltered = [...iptvChannels];
+    renderIptvLibrary();
+
+  } catch(e) {
+    showIptvError(e.message || 'Erro ao carregar a lista.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📡 Carregar Lista';
+  }
+}
+
+function showIptvError(msg) {
+  const el = document.getElementById('iptv-error');
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+function renderIptvLibrary() {
+  document.getElementById('iptv-setup').style.display = 'none';
+  document.getElementById('iptv-library').classList.add('show');
+
+  const total = iptvChannels.length;
+  const m3uUrl = document.getElementById('iptv-m3u-url').value;
+  const listName = m3uUrl.split('/').pop().split('?')[0] || 'Lista IPTV';
+  document.getElementById('iptv-lib-name').textContent = '📡 ' + listName;
+  document.getElementById('iptv-ch-count').textContent = total + ' canais';
+
+  setStatus('s-iptv', 'LIGADO', '');
+  document.getElementById('iptv-badge').textContent = 'LIGADO';
+
+  // Build group tabs
+  const groups = ['Todos', ...new Set(iptvChannels.map(c => c.group).filter(Boolean))];
+  const groupsEl = document.getElementById('iptv-groups');
+  groupsEl.innerHTML = '';
+  groups.slice(0, 40).forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'iptv-group-btn' + (g === iptvCurrentGroup ? ' active' : '');
+    btn.textContent = g;
+    btn.onclick = () => {
+      iptvCurrentGroup = g;
+      document.querySelectorAll('.iptv-group-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('iptv-filter').value = '';
+      filterIptvChannels('');
+    };
+    groupsEl.appendChild(btn);
+  });
+
+  filterIptvChannels('');
+}
+
+function filterIptvChannels(query) {
+  const q = query.toLowerCase();
+  iptvFiltered = iptvChannels.filter(c => {
+    const groupMatch = iptvCurrentGroup === 'Todos' || c.group === iptvCurrentGroup;
+    const nameMatch = !q || c.name.toLowerCase().includes(q);
+    return groupMatch && nameMatch;
+  });
+  renderIptvChannels();
+}
+
+function renderIptvChannels() {
+  const wrap = document.getElementById('iptv-channel-list-wrap');
+  if (!iptvFiltered.length) {
+    wrap.innerHTML = '<div class="iptv-no-channels">Nenhum canal encontrado.</div>';
+    return;
+  }
+  const list = document.createElement('div');
+  list.className = 'iptv-channel-list';
+
+  iptvFiltered.slice(0, 200).forEach((ch, i) => {
+    const globalIdx = iptvChannels.indexOf(ch);
+    const item = document.createElement('div');
+    item.className = 'iptv-channel-item' + (globalIdx === iptvCurrentIndex ? ' active' : '');
+    item.innerHTML = `
+      ${ch.logo
+        ? `<img class="iptv-ch-logo" src="${ch.logo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : ''}
+      <div class="iptv-ch-logo-placeholder" style="${ch.logo ? 'display:none' : ''}">📺</div>
+      <div class="iptv-ch-info">
+        <div class="iptv-ch-name">${ch.name || 'Canal ' + (i+1)}</div>
+        <div class="iptv-ch-group">${ch.group || ''}</div>
+      </div>
+      <span class="iptv-ch-play">▶</span>
+    `;
+    item.onclick = () => playIptvChannel(globalIdx);
+    list.appendChild(item);
+  });
+
+  wrap.innerHTML = '';
+  wrap.appendChild(list);
+}
+
+function playIptvChannel(index) {
+  const ch = iptvChannels[index];
+  if (!ch) return;
+  iptvCurrentIndex = index;
+
+  const video = document.getElementById('iptv-video');
+  video.src = ch.url;
+
+  document.getElementById('iptv-library').classList.remove('show');
+  const playerWrap = document.getElementById('iptv-player-wrap');
+  playerWrap.classList.add('show');
+
+  document.getElementById('iptv-np-title').textContent = ch.name || 'Canal';
+  document.getElementById('iptv-np-group').textContent = ch.group || '';
+
+  installBypass(video, iptvPaused);
+  video.addEventListener('click', () => { iptvPaused.value = !video.paused; });
+  ensureAudio(video);
+  video.play().catch(() => {});
+}
+
+function iptvNextChannel() {
+  if (iptvCurrentIndex < iptvChannels.length - 1) {
+    playIptvChannel(iptvCurrentIndex + 1);
+  }
+}
+
+function iptvPrevChannel() {
+  if (iptvCurrentIndex > 0) {
+    playIptvChannel(iptvCurrentIndex - 1);
+  }
+}
+
+function closeIptvPlayer() {
+  const video = document.getElementById('iptv-video');
+  video.pause();
+  video.src = '';
+  document.getElementById('iptv-player-wrap').classList.remove('show');
+  document.getElementById('iptv-library').classList.add('show');
+  renderIptvChannels(); // refresh active state
+}
+
+function iptvLogout() {
+  const video = document.getElementById('iptv-video');
+  video.pause(); video.src = '';
+  iptvChannels = []; iptvFiltered = []; iptvCurrentIndex = -1; iptvCurrentGroup = 'Todos';
+  document.getElementById('iptv-library').classList.remove('show');
+  document.getElementById('iptv-player-wrap').classList.remove('show');
+  document.getElementById('iptv-setup').style.display = 'flex';
+  setStatus('s-iptv', 'INATIVO', 'off');
+  document.getElementById('iptv-badge').textContent = 'DESLIGADO';
 }
 
 // User interaction → AudioContext
