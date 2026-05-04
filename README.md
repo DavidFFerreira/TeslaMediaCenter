@@ -113,3 +113,5 @@ Com o vídeo a tocar, podes usar os botões **◀ Anterior** e **Próximo ▶** 
 
 Este projeto é apenas para fins educativos. Não uses o ecrã do Tesla para ver vídeo enquanto conduzes — é ilegal e perigoso.
 
+Se quiseres podes sempre pagar-me um cafézito carregando [aqui](https://paypal.me/Davidfferreira1986?locale.x=pt_PT&country.x=PT)
+
