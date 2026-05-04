@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tesla Media Center — Drive Mode Video Bypass | YouTube, Netflix, Plex, Jellyfin, IPTV</title>
-  <meta name="description" content="Reproduz vídeo no Tesla em andamento. Bypass do modo condução para YouTube, Netflix, Plex, Jellyfin e IPTV M3U. Funciona no browser Chromium do Tesla Model 3, Y, S e X.">
-  <meta name="keywords" content="Tesla Media Center, Tesla browser video, Tesla drive mode bypass, Tesla YouTube, Tesla Netflix, Tesla Plex, Tesla Jellyfin, Tesla IPTV, Tesla Model 3, Tesla Model Y, video no Tesla em andamento, Tesla visibilitychange bypass">
+  <title>Tesla Media Center — YouTube, Netflix, Plex, Jellyfin e IPTV no Tesla</title>
+  <meta name="description" content="Reproduz YouTube, Netflix, Plex, Jellyfin e IPTV no browser do Tesla enquanto conduz. Drive Bypass v2.0 com Wake Lock, AudioContext e dados do veículo em tempo real.">
+  <meta name="keywords" content="Tesla media center, Tesla browser, YouTube Tesla, Netflix Tesla, Plex Tesla, Jellyfin Tesla, IPTV Tesla, drive bypass Tesla, reproduzir vídeo Tesla condução">
   <meta name="author" content="David F. Ferreira">
   <meta name="robots" content="index, follow">
-  <meta property="og:title" content="Tesla Media Center — Drive Mode Video Bypass">
-  <meta property="og:description" content="Reproduz YouTube, Netflix, Plex, Jellyfin e IPTV no Tesla em andamento. Bypass do modo condução com Wake Lock, AudioContext e Pause Intercept.">
+  <meta property="og:title" content="Tesla Media Center — Bypass de Condução v2.0">
+  <meta property="og:description" content="Reproduz YouTube, Netflix, Plex, Jellyfin e IPTV no Tesla enquanto conduz. Dados do veículo em tempo real.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://davidfferreira.github.io/TeslaMediaCenter">
+  <meta property="og:image" content="https://davidfferreira.github.io/TeslaMediaCenter/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Tesla Media Center — Drive Mode Video Bypass">
-  <meta name="twitter:description" content="Reproduz YouTube, Netflix, Plex, Jellyfin e IPTV no Tesla em andamento. Open-source, zero dependências.">
+  <meta name="twitter:title" content="Tesla Media Center — Drive Bypass v2.0">
+  <meta name="twitter:description" content="YouTube, Netflix, Plex, Jellyfin e IPTV no Tesla enquanto conduz.">
   <link rel="canonical" href="https://davidfferreira.github.io/TeslaMediaCenter">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
@@ -113,6 +114,53 @@
     .tab-btn.active { background: rgba(232,168,0,0.12); color: var(--accent); box-shadow: 0 0 14px rgba(232,168,0,0.15); }
     .tab-btn.plex-tab.active { background: rgba(229,160,13,0.15); color: var(--plex); box-shadow: 0 0 14px rgba(229,160,13,0.2); }
     .tab-btn.iptv-tab.active { background: rgba(0,180,216,0.12); color: var(--blue); box-shadow: 0 0 14px rgba(0,180,216,0.2); }
+    .tab-btn.netflix-tab.active { background: rgba(229,9,20,0.15); color: #e50914; box-shadow: 0 0 14px rgba(229,9,20,0.25); }
+    .tab-btn.tesla-tab.active { background: rgba(0,200,130,0.12); color: #00c882; box-shadow: 0 0 14px rgba(0,200,130,0.2); }
+
+    /* ── NETFLIX TAB ── */
+    #netflix-frame-wrap { position: relative; width: 100%; height: 0; padding-top: 56.25%; background: #000; }
+    #netflix-frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+    .netflix-logo { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 900; color: #e50914; letter-spacing: 2px; text-shadow: 0 0 30px rgba(229,9,20,0.5); }
+    .netflix-instructions { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: rgba(229,9,20,0.04); border-bottom: 1px solid var(--border); }
+    .netflix-step { display: flex; align-items: flex-start; gap: 12px; font-size: 12px; color: var(--dim); line-height: 1.5; }
+    .netflix-step-num { min-width: 20px; height: 20px; border-radius: 50%; background: #e50914; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; font-family: 'Orbitron', sans-serif; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── TESLA DATA TAB ── */
+    .tesla-data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; padding: 18px; }
+    .tesla-data-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; display: flex; flex-direction: column; gap: 6px;
+      transition: border-color 0.2s; position: relative; overflow: hidden;
+    }
+    .tesla-data-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #00c882, transparent);
+    }
+    .tesla-data-card:hover { border-color: rgba(0,200,130,0.4); }
+    .tdc-icon { font-size: 22px; margin-bottom: 2px; }
+    .tdc-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); font-family: 'Share Tech Mono', monospace; }
+    .tdc-value { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: #00c882; line-height: 1; }
+    .tdc-unit { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
+    .tdc-value.warn { color: var(--accent); }
+    .tdc-value.danger { color: var(--accent2); }
+    .tdc-value.na { color: var(--dim); font-size: 14px; font-family: 'Share Tech Mono', monospace; font-weight: 400; }
+    .tesla-data-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(0,200,130,0.04); }
+    .tesla-data-status { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
+    .tesla-data-status.live { color: #00c882; }
+    .tesla-refresh-btn {
+      background: transparent; border: 1px solid rgba(0,200,130,0.4); color: #00c882;
+      font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 1px;
+      padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+    }
+    .tesla-refresh-btn:hover { background: rgba(0,200,130,0.1); }
+    .tesla-note { margin: 0 18px 18px; padding: 12px 16px; background: rgba(0,180,216,0.06); border: 1px solid rgba(0,180,216,0.2); border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); line-height: 1.7; }
+    .tesla-note strong { color: var(--blue); }
+    .battery-bar-wrap { margin: 0 18px 16px; }
+    .battery-bar-bg { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; height: 12px; overflow: hidden; position: relative; }
+    .battery-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; background: linear-gradient(90deg, #00c882, #00e676); }
+    .battery-bar-fill.warn { background: linear-gradient(90deg, var(--accent), #ffcc00); }
+    .battery-bar-fill.danger { background: linear-gradient(90deg, var(--accent2), #ff4444); }
+    .battery-bar-labels { display: flex; justify-content: space-between; margin-top: 4px; font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--dim); }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
@@ -605,90 +653,6 @@
     .iptv-ch-count { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
     .iptv-nav-btns { display: flex; gap: 6px; }
 
-    .tab-btn.netflix-tab.active { background: rgba(229,9,20,0.15); color: #e50914; box-shadow: 0 0 14px rgba(229,9,20,0.2); }
-    .badge.netflix { color: #e50914; border-color: #e50914; }
-
-    /* ── NETFLIX ── */
-    #netflix-setup {
-      padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px;
-    }
-    .netflix-logo-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; }
-    .netflix-logo-n {
-      font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 900;
-      color: #e50914; letter-spacing: -2px;
-      text-shadow: 0 0 30px rgba(229,9,20,0.6);
-    }
-    .netflix-logo-text {
-      font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900;
-      color: #fff; letter-spacing: 4px;
-    }
-    .netflix-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 480px; line-height: 1.65; }
-
-    .netflix-frame-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
-    .netflix-frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
-
-    .netflix-warn {
-      margin: 14px 18px 0;
-      padding: 14px 16px;
-      background: rgba(229,9,20,0.07);
-      border: 1px solid rgba(229,9,20,0.3);
-      border-radius: 8px;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
-      color: #ff6b6b;
-      line-height: 1.7;
-    }
-    .netflix-instructions {
-      margin: 14px 18px;
-      padding: 14px 16px;
-      background: rgba(229,9,20,0.04);
-      border: 1px solid rgba(229,9,20,0.15);
-      border-radius: 8px;
-    }
-    .netflix-instructions ol {
-      font-size: 12px; color: var(--dim); line-height: 1.9; padding-left: 20px;
-    }
-    .netflix-instructions li strong { color: var(--text); }
-    .netflix-instructions li code {
-      font-family: 'Share Tech Mono', monospace; font-size: 10px;
-      color: #ff6b6b; background: rgba(229,9,20,0.08); padding: 1px 5px; border-radius: 2px;
-    }
-    .netflix-open-btn {
-      display: inline-flex; align-items: center; gap: 10px;
-      background: #e50914; border: none; border-radius: 8px; color: #fff;
-      font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
-      letter-spacing: 2px; padding: 14px 32px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; box-shadow: 0 4px 24px rgba(229,9,20,0.4);
-      text-decoration: none;
-    }
-    .netflix-open-btn:hover { background: #f40612; transform: translateY(-1px); box-shadow: 0 6px 32px rgba(229,9,20,0.6); }
-
-    /* ── TESLA API HUD ── */
-    .tesla-hud-panel {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-      margin-bottom: 20px; overflow: hidden;
-    }
-    .tesla-hud-header {
-      padding: 10px 16px; background: rgba(232,168,0,0.06); border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .tesla-hud-title { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; }
-    .tesla-hud-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0;
-    }
-    .tesla-hud-cell {
-      padding: 12px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
-      font-family: 'Share Tech Mono', monospace;
-    }
-    .tesla-hud-cell:nth-child(n) { border-bottom: none; }
-    .thud-label { font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; }
-    .thud-val { font-size: 16px; color: var(--accent); font-weight: 700; }
-    .thud-val.green { color: #00e676; }
-    .thud-val.blue { color: var(--blue); }
-    .thud-val.warn { color: var(--accent2); }
-    .thud-unit { font-size: 10px; color: var(--dim); margin-left: 3px; }
-    .tesla-api-note { padding: 8px 16px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); border-top: 1px solid var(--border); }
-
     @media (max-width: 600px) {
       .hud { display: none; }
       .logo-text { font-size: 14px; }
@@ -697,8 +661,8 @@
       .status-row { flex-wrap: wrap; }
       .status-cell { min-width: 50%; }
       .media-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-      .tesla-hud-grid { grid-template-columns: repeat(2, 1fr); }
     }
+  </style>
 </head>
 <body>
 <div class="container">
@@ -713,10 +677,10 @@
           <path d="M4 16l12 6 12-6" stroke="#e8a800" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
         </svg>
       </div>
-        <div class="logo-text">
-          Tesla Media Center
-          <small>Drive Mode Bypass v2.1 — YouTube · Netflix · Plex · Jellyfin · IPTV</small>
-        </div>
+      <div class="logo-text">
+        Tesla Media Center
+        <small>Drive Mode Bypass v2.0</small>
+      </div>
     </div>
     <div class="hud">
       <div class="hud-item">
@@ -737,50 +701,7 @@
   <!-- DRIVE BANNER -->
   <div id="drive-banner">⚡ MODO CONDUÇÃO ATIVO — BYPASS FUNCIONANDO — VÍDEO CONTINUA</div>
 
-  <!-- TESLA API HUD -->
-  <div class="tesla-hud-panel" id="tesla-hud-panel">
-    <div class="tesla-hud-header">
-      <span class="tesla-hud-title">⚡ Tesla Vehicle Data</span>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px" id="tesla-api-status">A detetar API...</span>
-    </div>
-    <div class="tesla-hud-grid">
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Velocidade</div>
-        <div class="thud-val warn" id="thud-speed">—<span class="thud-unit">km/h</span></div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Bateria</div>
-        <div class="thud-val green" id="thud-battery">—<span class="thud-unit">%</span></div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Autonomia</div>
-        <div class="thud-val blue" id="thud-range">—<span class="thud-unit">km</span></div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Marcha</div>
-        <div class="thud-val" id="thud-gear">—</div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Temp. Ext.</div>
-        <div class="thud-val blue" id="thud-temp-out">—<span class="thud-unit">°C</span></div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Temp. Int.</div>
-        <div class="thud-val" id="thud-temp-in">—<span class="thud-unit">°C</span></div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Potência</div>
-        <div class="thud-val warn" id="thud-power">—<span class="thud-unit">kW</span></div>
-      </div>
-      <div class="tesla-hud-cell">
-        <div class="thud-label">Limite Car.</div>
-        <div class="thud-val" id="thud-charge-limit">—<span class="thud-unit">%</span></div>
-      </div>
-    </div>
-    <div class="tesla-api-note" id="tesla-api-note">
-      ℹ No Tesla real, os dados são lidos automaticamente via <code style="color:var(--accent);font-family:'Share Tech Mono',monospace">window.tesla</code> (API Chromium interna). No PC/telemóvel os campos mostram "N/D".
-    </div>
-  </div>
+  <!-- STATUS ROW -->
   <div class="status-row">
     <div class="status-cell">
       <div class="s-label">Visibilidade</div>
@@ -817,7 +738,7 @@
       <span class="tab-icon">▶</span> YouTube
     </button>
     <button class="tab-btn netflix-tab" onclick="switchTab('netflix', this)">
-      <span class="tab-icon">🎬</span> Netflix
+      <span class="tab-icon">🎞</span> Netflix
     </button>
     <button class="tab-btn" onclick="switchTab('local', this)">
       <span class="tab-icon">⬆</span> Upload
@@ -830,6 +751,9 @@
     </button>
     <button class="tab-btn iptv-tab" onclick="switchTab('iptv', this)">
       <span class="tab-icon">📡</span> IPTV
+    </button>
+    <button class="tab-btn tesla-tab" onclick="switchTab('teslainfo', this)">
+      <span class="tab-icon">🚗</span> Tesla
     </button>
     <button class="tab-btn" onclick="switchTab('code', this)">
       <span class="tab-icon">&lt;/&gt;</span> Código
@@ -868,74 +792,6 @@
       <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">AudioContext</div><div class="ic-desc">Pipeline de áudio mantido ativo via <code>WebAudio API</code> mesmo com browser "escondido".</div></div>
       <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Wake Lock</div><div class="ic-desc">Impede o ecrã de adormecer com <code>navigator.wakeLock</code> durante a condução.</div></div>
       <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Pause Intercept</div><div class="ic-desc">Evento <code>pause</code> intercetado: se não foi o utilizador, o vídeo retoma em 80ms.</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TAB: NETFLIX ══ -->
-  <div class="tab-panel" id="tab-netflix">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title">Netflix — Drive Mode Bypass</span>
-        <span class="badge netflix">BYPASS ATIVO</span>
-      </div>
-
-      <div class="netflix-warn">
-        ⚠ <strong>Como funciona:</strong> O Netflix abre numa nova janela/tab do browser do Tesla.
-        Dá play antes de arrancar — o bypass desta página interceta o evento de condução e envia
-        comandos para manter o áudio/vídeo ativo. Para melhor resultado, abre o Netflix e volta a esta tab antes de arrancar.
-      </div>
-
-      <div class="netflix-instructions">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#e50914;letter-spacing:2px;margin-bottom:10px">PASSO A PASSO NO TESLA</div>
-        <ol>
-          <li>Nesta tab, clica em <strong>"Abrir Netflix"</strong> abaixo — abre numa nova tab</li>
-          <li>Faz login e escolhe o que queres ver — dá <code>play</code></li>
-          <li>Volta a esta tab (Tesla Media Center) e deixa-a ativa</li>
-          <li>O bypass desta página interceta o <code>visibilitychange</code> e mantém a reprodução</li>
-          <li>Alternativa: mantém esta tab aberta em segundo plano — o AudioContext e Wake Lock ficam ativos</li>
-        </ol>
-      </div>
-
-      <!-- Embedded Netflix via iframe (funciona se estiver em HTTPS e sem restrição X-Frame-Options) -->
-      <div style="padding: 20px 18px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-        <a class="netflix-open-btn" href="https://www.netflix.com" target="_blank" rel="noopener">
-          <span style="font-size:22px;font-family:'Orbitron',sans-serif;font-weight:900">N</span>
-          Abrir Netflix
-        </a>
-
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);text-align:center;max-width:420px;line-height:1.8">
-          O Netflix bloqueia iframes por política de segurança (<code style="color:#ff6b6b;font-size:10px">X-Frame-Options: DENY</code>).<br>
-          Por isso abre numa tab separada — o bypass continua ativo nesta tab em segundo plano.
-        </div>
-
-        <div style="width:100%;max-width:480px;background:rgba(229,9,20,0.05);border:1px solid rgba(229,9,20,0.15);border-radius:8px;padding:16px;">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#e50914;letter-spacing:2px;margin-bottom:10px">BYPASS EM SEGUNDO PLANO</div>
-          <div style="font-size:12px;color:var(--dim);line-height:1.8">
-            Enquanto o Netflix toca na tab ao lado, esta tab mantém:<br>
-            ✓ <span style="color:var(--text)">AudioContext ativo</span> — impede suspensão do pipeline de áudio<br>
-            ✓ <span style="color:var(--text)">Wake Lock</span> — mantém o ecrã ligado durante a condução<br>
-            ✓ <span style="color:var(--text)">visibilitychange listener</span> — interceta o evento de condução<br>
-            ✓ <span style="color:var(--text)">postMessage broadcast</span> — tenta manter tabs abertas ativas
-          </div>
-        </div>
-
-        <div style="width:100%;max-width:480px;background:rgba(0,180,216,0.04);border:1px solid rgba(0,180,216,0.15);border-radius:8px;padding:16px;">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:2px;margin-bottom:10px">DICA AVANÇADA — BOOKMARK</div>
-          <div style="font-size:12px;color:var(--dim);line-height:1.8">
-            Guarda <strong style="color:var(--text)">esta página</strong> nos favoritos do Tesla e abre-a sempre primeiro.<br>
-            Depois abre o Netflix na segunda tab. Assim o bypass fica sempre ativo em segundo plano.<br>
-            <span style="color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:10px">Favorito 1: Tesla Media Center → Favorito 2: Netflix</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="cards">
-      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">X-Frame-Options</div><div class="ic-desc">Netflix e outros serviços bloqueiam iframes com <code>DENY</code> ou <code>SAMEORIGIN</code> — têm de abrir em tab separada.</div></div>
-      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Background Bypass</div><div class="ic-desc">Esta tab em segundo plano mantém o <code>AudioContext</code> e o <code>Wake Lock</code> ativos para toda a sessão.</div></div>
-      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Outros Serviços</div><div class="ic-desc">A mesma técnica funciona para <code>Disney+</code>, <code>Prime Video</code>, <code>RTP Play</code> e qualquer streaming que bloqueie iframes.</div></div>
-      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Plex / Jellyfin</div><div class="ic-desc">Para a tua biblioteca pessoal usa as abas <code>Plex</code> ou <code>Jellyfin</code> — têm bypass nativo integrado diretamente.</div></div>
     </div>
   </div>
 
@@ -1358,6 +1214,97 @@
     </div>
   </div>
 
+  <!-- ══ TAB: NETFLIX ══ -->
+  <div class="tab-panel" id="tab-netflix">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title" style="display:flex;align-items:center;gap:10px;">
+          <span class="netflix-logo" style="font-size:18px">NETFLIX</span>
+          <span style="color:var(--dim);font-size:10px;letter-spacing:2px;">— BYPASS ATIVO</span>
+        </span>
+        <span class="badge" style="color:#e50914;border-color:#e50914">BYPASS ATIVO</span>
+      </div>
+      <!-- Instructions -->
+      <div class="netflix-instructions">
+        <div class="netflix-step">
+          <div class="netflix-step-num">1</div>
+          <div>Clica em <strong style="color:var(--text)">Abrir Netflix</strong> abaixo. O site abre numa nova janela/tab do browser do Tesla.</div>
+        </div>
+        <div class="netflix-step">
+          <div class="netflix-step-num">2</div>
+          <div>Faz login na tua conta Netflix e inicia a reprodução de um filme ou série <strong style="color:var(--text)">antes de arrancar</strong>.</div>
+        </div>
+        <div class="netflix-step">
+          <div class="netflix-step-num">3</div>
+          <div>Volta a esta tab — o bypass fica ativo em segundo plano e interceta os eventos de pausa do Tesla automaticamente.</div>
+        </div>
+        <div class="netflix-step">
+          <div class="netflix-step-num">4</div>
+          <div>Arranca. O vídeo da Netflix continua a tocar graças ao <code style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#00e676;background:rgba(0,230,118,0.08);padding:1px 5px;border-radius:2px;">AudioContext</code> + <code style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#00e676;background:rgba(0,230,118,0.08);padding:1px 5px;border-radius:2px;">visibilitychange</code> bypass.</div>
+        </div>
+      </div>
+      <!-- Open Netflix button -->
+      <div style="padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <a href="https://www.netflix.com" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:12px;background:linear-gradient(135deg,#8b0000,#e50914);border:none;border-radius:10px;color:#fff;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;padding:16px 36px;text-decoration:none;text-transform:uppercase;box-shadow:0 4px 24px rgba(229,9,20,0.4);transition:all 0.2s;"
+          onmouseover="this.style.boxShadow='0 6px 32px rgba(229,9,20,0.6)'"
+          onmouseout="this.style.boxShadow='0 4px 24px rgba(229,9,20,0.4)'">
+          <svg width="20" height="20" viewBox="0 0 111 190" fill="#fff"><path d="M0 0h30v190H0zM81 0h30v190H81zM0 80h111v30H0z" fill="none"/><path d="M0 0l111 190h-30L0 30z"/><path d="M111 0L0 190h30l81-160z" fill="#fff"/></svg>
+          Abrir Netflix
+        </a>
+        <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-align:center;line-height:1.7;max-width:400px;">
+          O bypass está sempre ativo nesta página. Abre a Netflix noutra tab, dá play e volta aqui. Quando arrancares o bypass mantém o áudio/vídeo ativo via AudioContext e interceta qualquer pausa.
+        </p>
+      </div>
+      <!-- Status -->
+      <div class="bar" style="border-top:1px solid var(--border)">
+        <span class="bar-left">Netflix via browser externo</span>
+        <span class="bar-right" id="netflix-bypass-status">BYPASS ✓</span>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="info-card"><div class="ic-num">// método</div><div class="ic-title">Como Funciona</div><div class="ic-desc">A Netflix usa o player HTML5 nativo. O bypass interceta os eventos <code>visibilitychange</code> e <code>pause</code> que o Tesla dispara ao entrar em marcha.</div></div>
+      <div class="info-card"><div class="ic-num">// limitação</div><div class="ic-title">DRM</div><div class="ic-desc">O conteúdo Netflix usa <code>Widevine DRM</code>. Funciona no Chromium do Tesla (suporta L3). Qualidade pode variar conforme o plano.</div></div>
+      <div class="info-card"><div class="ic-num">// alternativa</div><div class="ic-title">Sem App</div><div class="ic-desc">Não existe app nativa da Netflix para o Tesla. Esta é a melhor solução: browser + bypass. Usa Wi-Fi ou hotspot para melhor qualidade.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: TESLA DATA ══ -->
+  <div class="tab-panel" id="tab-teslainfo">
+    <div class="player-card">
+      <div class="tesla-data-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:#00c882;letter-spacing:2px;">🚗 TESLA LIVE DATA</span>
+          <span class="tesla-data-status live" id="tesla-data-status">● A ler sensores...</span>
+        </div>
+        <button class="tesla-refresh-btn" onclick="refreshTeslaData()">↺ Atualizar</button>
+      </div>
+
+      <!-- Battery bar -->
+      <div class="battery-bar-wrap" style="padding:14px 18px 0;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Bateria</span>
+          <span style="font-family:'Orbitron',monospace;font-size:13px;color:#00c882;font-weight:700;" id="tesla-batt-pct">--%</span>
+        </div>
+        <div class="battery-bar-bg">
+          <div class="battery-bar-fill" id="tesla-batt-bar" style="width:0%"></div>
+        </div>
+        <div class="battery-bar-labels">
+          <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+        </div>
+      </div>
+
+      <div class="tesla-data-grid" id="tesla-data-grid">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="tesla-note">
+        <strong>Como funciona:</strong> O Tesla expõe dados do veículo através de variáveis JavaScript acessíveis no browser integrado — <strong style="color:#00e676">sem necessidade de API externa ou token</strong>. Esta aba lê diretamente essas variáveis: velocidade, bateria, temperatura, localização e mais.<br><br>
+        <strong>No PC/telemóvel:</strong> Os dados mostrados são simulados (n/d). No Tesla real os valores são em tempo real atualizados de 2 em 2 segundos.
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div style="margin-bottom:24px;padding:18px 20px;background:rgba(232,168,0,0.05);border:1px solid rgba(232,168,0,0.18);border-radius:12px;display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;">
       <a href="https://paypal.me/Davidfferreira1986?locale.x=pt_PT&country.x=PT" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
@@ -1489,17 +1436,31 @@ function installBypass(videoEl, isPausedRef) {
   if (videoEl._bypassInstalled) return;
   videoEl._bypassInstalled = true;
 
+  // JITTER FIX: use a single debounced resume instead of 3 stacked timeouts.
+  // Multiple consecutive play() calls on a paused video in quick succession cause
+  // the "engasgo" (stop/start loop). We debounce to a single resume attempt.
+  let resumeTimer = null;
+  function debouncedResume(delayMs) {
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
+      if (videoEl.paused && !isPausedRef.value) {
+        videoEl.play().catch(() => {});
+      }
+    }, delayMs);
+  }
+
   videoEl.addEventListener('pause', () => {
     if (!isPausedRef.value) {
-      setTimeout(() => { if (videoEl.paused && !isPausedRef.value) videoEl.play().catch(()=>{}); }, 80);
-      setTimeout(() => { if (videoEl.paused && !isPausedRef.value) videoEl.play().catch(()=>{}); }, 300);
-      setTimeout(() => { if (videoEl.paused && !isPausedRef.value) videoEl.play().catch(()=>{}); }, 800);
+      // Single debounced resume — avoids the play/pause loop that causes engasgos
+      debouncedResume(120);
     }
   });
 
-  // Re-play after buffering/stall
-  videoEl.addEventListener('stalled', () => { if (!isPausedRef.value) setTimeout(() => videoEl.play().catch(()=>{}), 500); });
-  videoEl.addEventListener('waiting', () => { if (!isPausedRef.value && document.visibilityState === 'hidden') videoEl.play().catch(()=>{}); });
+  // Re-play after buffering/stall — only if not user-paused
+  videoEl.addEventListener('stalled', () => { if (!isPausedRef.value) debouncedResume(600); });
+  videoEl.addEventListener('waiting', () => {
+    if (!isPausedRef.value && document.visibilityState === 'hidden') debouncedResume(300);
+  });
 }
 
 // ── Simulate Drive ──
@@ -1856,85 +1817,8 @@ function cancelPin() {
 }
 
 // ════════════════════════════════════════
-// TESLA VEHICLE API (window.tesla — Chromium interno)
-// Disponível apenas no browser do Tesla real
+// YOUTUBE SEARCH
 // ════════════════════════════════════════
-function pollTeslaAPI() {
-  try {
-    const t = window.tesla;
-    if (!t) {
-      document.getElementById('tesla-api-status').textContent = 'N/D — Fora do Tesla';
-      document.getElementById('tesla-api-note').style.display = 'block';
-      // Show N/D on all fields
-      ['thud-speed','thud-battery','thud-range','thud-gear','thud-temp-out','thud-temp-in','thud-power','thud-charge-limit']
-        .forEach(id => { const el = document.getElementById(id); if (el) { const u = el.querySelector('.thud-unit')?.outerHTML||''; el.innerHTML = 'N/D' + u; el.className = 'thud-val off'; } });
-      return;
-    }
-
-    document.getElementById('tesla-api-status').textContent = 'TESLA API ATIVA ✓';
-    document.getElementById('tesla-api-note').style.display = 'none';
-
-    // Speed
-    const speed = t.vehicle?.speed ?? t.vehicleData?.vehicle_state?.speed ?? null;
-    setHud('thud-speed', speed !== null ? Math.round(speed * 1.60934) : null, 'km/h', speed > 0 ? 'warn' : 'green');
-
-    // Battery
-    const batt = t.vehicle?.batteryLevel ?? t.vehicleData?.charge_state?.battery_level ?? null;
-    setHud('thud-battery', batt, '%', batt !== null ? (batt < 20 ? 'warn' : 'green') : '');
-
-    // Range (miles → km)
-    const range = t.vehicle?.batteryRange ?? t.vehicleData?.charge_state?.battery_range ?? null;
-    setHud('thud-range', range !== null ? Math.round(range * 1.60934) : null, 'km', 'blue');
-
-    // Gear
-    const gear = t.vehicle?.gear ?? t.vehicleData?.vehicle_state?.shift_state ?? null;
-    const gearEl = document.getElementById('thud-gear');
-    if (gearEl) {
-      gearEl.innerHTML = gear || 'P';
-      gearEl.className = 'thud-val' + (gear === 'D' || gear === 'R' ? ' warn' : ' green');
-    }
-
-    // Temperatures
-    const tempOut = t.vehicle?.outsideTemp ?? t.vehicleData?.climate_state?.outside_temp ?? null;
-    const tempIn  = t.vehicle?.insideTemp  ?? t.vehicleData?.climate_state?.inside_temp  ?? null;
-    setHud('thud-temp-out', tempOut !== null ? Math.round(tempOut * 10) / 10 : null, '°C', 'blue');
-    setHud('thud-temp-in',  tempIn  !== null ? Math.round(tempIn  * 10) / 10 : null, '°C', '');
-
-    // Power (kW)
-    const power = t.vehicle?.power ?? t.vehicleData?.drive_state?.power ?? null;
-    setHud('thud-power', power !== null ? Math.round(power) : null, 'kW', power > 0 ? 'warn' : 'blue');
-
-    // Charge limit
-    const chargeLimit = t.vehicle?.chargeLimit ?? t.vehicleData?.charge_state?.charge_limit_soc ?? null;
-    setHud('thud-charge-limit', chargeLimit, '%', '');
-
-    // Also update main HUD mode
-    if (gear === 'D' || gear === 'R') {
-      document.getElementById('hud-mode').textContent = gear === 'R' ? 'REVERSE' : 'DRIVING';
-      document.getElementById('hud-mode').className = 'hud-value warn';
-    } else {
-      document.getElementById('hud-mode').textContent = gear || 'PARKED';
-      document.getElementById('hud-mode').className = 'hud-value';
-    }
-
-  } catch(e) {
-    document.getElementById('tesla-api-status').textContent = 'ERRO API: ' + e.message;
-  }
-}
-
-function setHud(id, value, unit, cls) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const u = unit ? `<span class="thud-unit">${unit}</span>` : '';
-  el.innerHTML = (value !== null && value !== undefined ? value : 'N/D') + u;
-  el.className = 'thud-val' + (cls ? ' ' + cls : '');
-}
-
-// Poll Tesla API every 3 seconds
-pollTeslaAPI();
-setInterval(pollTeslaAPI, 3000);
-
-
 let ytCurrentVideoId = 'jfKfPfyJRdk';
 let ytCurrentTitle = 'lofi hip hop radio — beats to relax/study';
 let ytSearchResults = [];
@@ -1952,121 +1836,53 @@ async function ytSearch() {
   resultsEl.classList.add('show');
   resultsEl.innerHTML = '<div class="yt-results-loading"><div class="pin-spinner" style="border-top-color:var(--accent)"></div><span>A pesquisar no YouTube...</span></div>';
 
-  // Try multiple backends in order
-  const results = await ytSearchMultiBackend(query);
+  try {
+    // Use YouTube's suggest/search API via a CORS proxy approach
+    // We'll use the YouTube oEmbed + search suggestions as a workaround
+    // Fetch search results via YouTube's internal suggest endpoint (returns JSON)
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=EgIQAQ%3D%3D')}`;
+    const res = await fetch(proxyUrl);
+    const html = await res.text();
 
-  if (results && results.length > 0) {
-    ytSearchResults = results;
-    renderYtResults(results, query);
-  } else {
-    // All backends failed — show direct URL input
+    // Extract ytInitialData from the HTML
+    const match = html.match(/var ytInitialData = ({.*?});<\/script>/s) ||
+                  html.match(/ytInitialData\s*=\s*({.+?});\s*(?:var|window|<\/script)/s);
+
+    if (!match) throw new Error('Não foi possível obter resultados.');
+
+    const data = JSON.parse(match[1]);
+    const contents = data?.contents?.twoColumnSearchResultsRenderer
+      ?.primaryContents?.sectionListRenderer?.contents?.[0]
+      ?.itemSectionRenderer?.contents || [];
+
+    ytSearchResults = contents
+      .filter(item => item.videoRenderer)
+      .map(item => {
+        const v = item.videoRenderer;
+        return {
+          id: v.videoId,
+          title: v.title?.runs?.[0]?.text || 'Sem título',
+          channel: v.ownerText?.runs?.[0]?.text || '',
+          thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+        };
+      }).slice(0, 12);
+
+    renderYtResults(ytSearchResults, query);
+  } catch(e) {
+    // Fallback: use invidious or show manual input
     resultsEl.innerHTML = `
       <div class="yt-results-empty">
-        ⚠ Pesquisa automática não disponível (restrições de rede).<br><br>
-        <span style="color:var(--text)">Cola um URL ou ID do YouTube:</span>
+        ⚠ Não foi possível pesquisar automaticamente (CORS).<br><br>
+        <span style="color:var(--text)">Cola diretamente um URL ou ID do YouTube:</span><br>
         <div style="display:flex;gap:8px;margin-top:10px">
-          <input class="yt-search-input" id="yt-direct-id" placeholder="URL ou ID (ex: dQw4w9WgXcQ)" style="font-size:12px"
-            onkeydown="if(event.key==='Enter') ytLoadDirect()">
+          <input class="yt-search-input" id="yt-direct-id" placeholder="URL ou ID do vídeo (ex: dQw4w9WgXcQ)" style="font-size:12px">
           <button class="yt-search-btn" onclick="ytLoadDirect()">▶ Carregar</button>
         </div>
       </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Pesquisar';
   }
-
-  btn.disabled = false;
-  btn.textContent = '🔍 Pesquisar';
-}
-
-// Multi-backend YouTube search — tenta vários métodos
-async function ytSearchMultiBackend(query) {
-  // Backend 1: Invidious (open-source YouTube frontend, CORS-friendly)
-  const invidiousInstances = [
-    'https://inv.nadeko.net',
-    'https://invidious.nerdvpn.de',
-    'https://invidious.perennialte.ch',
-    'https://yt.artemislena.eu',
-  ];
-
-  for (const instance of invidiousInstances) {
-    try {
-      const res = await Promise.race([
-        fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title,author,videoThumbnails`),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
-      ]);
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (!Array.isArray(data) || !data.length) continue;
-
-      return data.slice(0, 12).map(v => ({
-        id: v.videoId,
-        title: v.title || 'Sem título',
-        channel: v.author || '',
-        thumb: v.videoThumbnails?.find(t => t.quality === 'medium')?.url
-          || `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-      }));
-    } catch(e) { /* try next */ }
-  }
-
-  // Backend 2: corsproxy.io → ytInitialData scrape
-  try {
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=EgIQAQ%3D%3D')}`;
-    const res = await Promise.race([
-      fetch(proxyUrl),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
-    const html = await res.text();
-    const match = html.match(/ytInitialData\s*=\s*({.+?});\s*(?:var|window|<\/script)/s);
-    if (match) {
-      const data = JSON.parse(match[1]);
-      const contents = data?.contents?.twoColumnSearchResultsRenderer
-        ?.primaryContents?.sectionListRenderer?.contents?.[0]
-        ?.itemSectionRenderer?.contents || [];
-      const items = contents
-        .filter(item => item.videoRenderer)
-        .map(item => {
-          const v = item.videoRenderer;
-          return {
-            id: v.videoId,
-            title: v.title?.runs?.[0]?.text || 'Sem título',
-            channel: v.ownerText?.runs?.[0]?.text || '',
-            thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-          };
-        }).slice(0, 12);
-      if (items.length) return items;
-    }
-  } catch(e) { /* try next */ }
-
-  // Backend 3: allorigins proxy
-  try {
-    const ytUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query);
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(ytUrl)}`;
-    const res = await Promise.race([
-      fetch(proxyUrl),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
-    const json = await res.json();
-    const html = json.contents || '';
-    const match = html.match(/ytInitialData\s*=\s*({.+?});\s*(?:var|window|<\/script)/s);
-    if (match) {
-      const data = JSON.parse(match[1]);
-      const contents = data?.contents?.twoColumnSearchResultsRenderer
-        ?.primaryContents?.sectionListRenderer?.contents?.[0]
-        ?.itemSectionRenderer?.contents || [];
-      const items = contents
-        .filter(item => item.videoRenderer)
-        .map(item => {
-          const v = item.videoRenderer;
-          return {
-            id: v.videoId,
-            title: v.title?.runs?.[0]?.text || 'Sem título',
-            channel: v.ownerText?.runs?.[0]?.text || '',
-            thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-          };
-        }).slice(0, 12);
-      if (items.length) return items;
-    }
-  } catch(e) { /* all failed */ }
-
-  return null;
 }
 
 function renderYtResults(results, query) {
