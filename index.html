@@ -3,933 +3,1147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tesla Video Player — Drive Mode Demo</title>
+  <title>Tesla Media Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #080c10;
-      --surface: #0d1219;
-      --panel: #111820;
-      --border: #1e2d3d;
-      --accent: #00d4ff;
-      --accent2: #00ff9d;
-      --warn: #ff6b35;
-      --text: #c8dce8;
-      --dim: #4a6070;
-      --glow: 0 0 20px rgba(0,212,255,0.3);
-      --glow2: 0 0 20px rgba(0,255,157,0.3);
+      --bg:       #05080d;
+      --surface:  #090d14;
+      --panel:    #0c1220;
+      --border:   #172030;
+      --accent:   #e8a800;
+      --accent2:  #ff6b00;
+      --blue:     #00b4d8;
+      --plex:     #e5a00d;
+      --text:     #c5d8e8;
+      --dim:      #3d5570;
+      --glow-y:   0 0 20px rgba(232,168,0,0.35);
+      --glow-b:   0 0 20px rgba(0,180,216,0.35);
     }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Rajdhani', sans-serif;
-      overflow-x: hidden;
-    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Exo 2', sans-serif; overflow-x: hidden; }
 
-    /* Scanline overlay */
+    /* scanlines */
     body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.07) 2px,
-        rgba(0,0,0,0.07) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9000;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
     }
 
-    /* Grid background */
+    /* grid */
     body::after {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: linear-gradient(rgba(232,168,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(232,168,0,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
     }
 
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 24px 20px 60px;
-    }
+    .container { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 20px 18px 60px; }
 
-    /* ── Header ── */
+    /* ── HEADER ── */
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 36px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+    .logo { display: flex; align-items: center; gap: 14px; }
 
-    .logo-icon {
-      width: 44px; height: 44px;
-      border: 2px solid var(--accent);
-      border-radius: 50%;
+    .logo-mark {
+      width: 46px; height: 46px; border-radius: 8px;
+      background: linear-gradient(135deg, #1a1000, #2a1a00);
+      border: 1px solid var(--accent);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--glow), inset 0 0 10px rgba(0,212,255,0.1);
-      animation: pulse-border 3s ease-in-out infinite;
+      box-shadow: var(--glow-y);
+      animation: halo 4s ease-in-out infinite;
     }
-
-    @keyframes pulse-border {
-      0%,100% { box-shadow: var(--glow), inset 0 0 10px rgba(0,212,255,0.1); }
-      50% { box-shadow: 0 0 30px rgba(0,212,255,0.5), inset 0 0 20px rgba(0,212,255,0.2); }
+    @keyframes halo {
+      0%,100% { box-shadow: var(--glow-y); }
+      50% { box-shadow: 0 0 35px rgba(232,168,0,0.55); }
     }
+    .logo-mark svg { width: 26px; height: 26px; }
 
-    .logo-icon svg { width: 22px; height: 22px; fill: var(--accent); }
+    .logo-text { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 3px; color: #fff; text-transform: uppercase; line-height: 1.1; }
+    .logo-text small { display: block; font-size: 9px; font-weight: 400; color: var(--accent); letter-spacing: 5px; margin-top: 2px; }
 
-    .logo-text {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: #fff;
-    }
+    .hud { display: flex; gap: 24px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+    .hud-item { display: flex; flex-direction: column; gap: 2px; }
+    .hud-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+    .hud-value { color: var(--accent); }
+    .hud-value.ok { color: #00e676; }
+    .hud-value.warn { color: var(--accent2); }
 
-    .logo-text span { color: var(--accent); }
-
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
-      color: var(--dim);
-    }
-
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent2);
-      box-shadow: 0 0 8px var(--accent2);
-      animation: blink 2s step-end infinite;
-    }
-
-    @keyframes blink { 50% { opacity: 0.2; } }
-
-    /* ── Drive Mode Banner ── */
+    /* ── DRIVE BANNER ── */
     #drive-banner {
-      display: none;
-      background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,107,53,0.05));
-      border: 1px solid rgba(255,107,53,0.5);
-      border-radius: 8px;
-      padding: 12px 20px;
-      margin-bottom: 24px;
-      text-align: center;
-      font-size: 14px;
-      letter-spacing: 2px;
-      color: var(--warn);
-      text-transform: uppercase;
-      box-shadow: 0 0 20px rgba(255,107,53,0.15);
+      display: none; margin-bottom: 18px;
+      padding: 10px 20px; border-radius: 6px; text-align: center;
+      background: linear-gradient(90deg, rgba(255,107,0,0.12), rgba(232,168,0,0.08), rgba(255,107,0,0.12));
+      border: 1px solid rgba(255,107,0,0.4);
+      font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--accent2);
+      text-transform: uppercase; animation: pulse-bg 2s ease-in-out infinite;
     }
+    @keyframes pulse-bg { 50% { background: linear-gradient(90deg, rgba(255,107,0,0.2), rgba(232,168,0,0.12), rgba(255,107,0,0.2)); } }
+    #drive-banner.show { display: block; }
 
-    #drive-banner.active { display: block; animation: slideDown 0.4s ease; }
-    @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-
-    /* ── Tabs ── */
+    /* ── TABS ── */
     .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 4px;
+      display: flex; gap: 3px; margin-bottom: 22px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px;
     }
-
     .tab-btn {
-      flex: 1;
-      padding: 10px 16px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
-      color: var(--dim);
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.25s;
+      flex: 1; padding: 11px 12px; background: transparent; border: none; border-radius: 7px;
+      color: var(--dim); font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
     }
-
-    .tab-btn.active {
-      background: rgba(0,212,255,0.1);
-      color: var(--accent);
-      box-shadow: 0 0 12px rgba(0,212,255,0.2);
-    }
-
+    .tab-btn .tab-icon { font-size: 15px; }
     .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab-btn.active { background: rgba(232,168,0,0.12); color: var(--accent); box-shadow: 0 0 14px rgba(232,168,0,0.15); }
+    .tab-btn.plex-tab.active { background: rgba(229,160,13,0.15); color: var(--plex); box-shadow: 0 0 14px rgba(229,160,13,0.2); }
 
     .tab-panel { display: none; }
-    .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 
-    /* ── Player Card ── */
+    /* ── STATUS ROW ── */
+    .status-row {
+      display: flex; align-items: center; gap: 0; margin-bottom: 22px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    }
+    .status-cell {
+      flex: 1; padding: 12px 16px; border-right: 1px solid var(--border);
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .status-cell:last-child { border-right: none; flex: 0 0 auto; padding: 10px 16px; }
+    .s-label { font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 3px; }
+    .s-val { font-size: 12px; color: #00e676; }
+    .s-val.off { color: var(--dim); }
+    .s-val.warn { color: var(--accent2); }
+
+    .sim-btn {
+      background: transparent; border: 1px solid var(--accent); color: var(--accent);
+      font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      padding: 8px 18px; border-radius: 6px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .sim-btn:hover { background: rgba(232,168,0,0.1); box-shadow: var(--glow-y); }
+    .sim-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,0,0.1); }
+
+    /* ── PLAYER CARD ── */
     .player-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 20px; box-shadow: 0 8px 48px rgba(0,0,0,0.6);
     }
-
     .player-header {
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0,212,255,0.03);
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.02);
     }
-
-    .player-title {
-      font-size: 11px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--dim);
+    .player-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); }
+    .badge {
+      font-family: 'Share Tech Mono', monospace; font-size: 9px; padding: 3px 10px;
+      border-radius: 20px; letter-spacing: 1px; border: 1px solid currentColor;
     }
+    .badge.green { color: #00e676; border-color: #00e676; }
+    .badge.orange { color: var(--accent); border-color: var(--accent); }
+    .badge.plex { color: var(--plex); border-color: var(--plex); }
 
-    .player-badge {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 10px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--accent2);
-      color: var(--accent2);
-      letter-spacing: 1px;
+    .yt-wrap { position: relative; padding-top: 56.25%; background: #000; }
+    .yt-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+
+    .bar {
+      padding: 11px 18px; display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.35); border-top: 1px solid var(--border);
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
     }
+    .bar-left { color: var(--dim); }
+    .bar-right { color: #00e676; }
 
-    /* YouTube embed */
-    .yt-wrapper {
-      position: relative;
-      padding-top: 56.25%;
-      background: #000;
+    /* ── UPLOAD ── */
+    #upload-zone {
+      margin: 18px; padding: 44px 20px; border: 2px dashed var(--border); border-radius: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      cursor: pointer; transition: all 0.3s; background: rgba(232,168,0,0.01);
     }
-
-    .yt-wrapper iframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
+    #upload-zone:hover, #upload-zone.over {
+      border-color: var(--accent); background: rgba(232,168,0,0.05);
     }
-
-    /* Upload player */
-    #upload-area {
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      border: 2px dashed var(--border);
-      margin: 20px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: rgba(0,212,255,0.02);
-    }
-
-    #upload-area:hover, #upload-area.drag-over {
-      border-color: var(--accent);
-      background: rgba(0,212,255,0.05);
-    }
-
-    #upload-area svg { opacity: 0.4; transition: opacity 0.3s; }
-    #upload-area:hover svg { opacity: 0.8; }
-
-    #upload-area p {
-      font-size: 15px;
-      letter-spacing: 1px;
-      color: var(--dim);
-    }
-
-    #upload-area span {
-      font-size: 12px;
-      color: var(--dim);
-      opacity: 0.6;
-      font-family: 'Share Tech Mono', monospace;
-    }
-
+    #upload-zone svg { opacity: 0.35; transition: opacity 0.3s; }
+    #upload-zone:hover svg { opacity: 0.7; }
+    #upload-zone p { font-size: 15px; color: var(--dim); letter-spacing: 1px; }
+    #upload-zone span { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); opacity: 0.5; }
     #file-input { display: none; }
 
-    #local-video-wrapper {
-      display: none;
-      flex-direction: column;
+    #local-wrap { display: none; flex-direction: column; }
+    #local-video { width: 100%; max-height: 460px; background: #000; }
+
+    .btn-sm {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      font-family: 'Exo 2', sans-serif; font-size: 11px; letter-spacing: 2px;
+      padding: 5px 14px; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+    }
+    .btn-sm:hover { border-color: var(--accent2); color: var(--accent2); }
+    .fname { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--accent); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── PLEX ── */
+    #plex-connect {
+      padding: 48px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
     }
 
-    #local-video-wrapper video {
-      width: 100%;
-      max-height: 480px;
-      background: #000;
+    .plex-logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .plex-logo-wrap svg { width: 48px; height: 48px; }
+    .plex-logo-text {
+      font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900;
+      color: var(--plex); letter-spacing: 2px;
     }
 
-    .video-controls-bar {
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0,0,0,0.3);
-      border-top: 1px solid var(--border);
+    .plex-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 460px; line-height: 1.6; letter-spacing: 0.5px; }
+
+    #server-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 420px; }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); font-family: 'Share Tech Mono', monospace; }
+    .field-input {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px;
+      padding: 10px 14px; outline: none; transition: border-color 0.2s;
+    }
+    .field-input:focus { border-color: var(--plex); }
+    .field-input::placeholder { color: var(--dim); opacity: 0.5; }
+
+    .plex-btn {
+      background: linear-gradient(135deg, #cc8800, #e5a00d);
+      border: none; border-radius: 8px; color: #000;
+      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; padding: 13px 28px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; box-shadow: 0 4px 20px rgba(229,160,13,0.3);
+    }
+    .plex-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(229,160,13,0.5); }
+    .plex-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .plex-pin-box {
+      display: none; flex-direction: column; align-items: center; gap: 16px;
+      padding: 28px; background: rgba(229,160,13,0.06); border: 1px solid rgba(229,160,13,0.2);
+      border-radius: 12px; width: 100%; max-width: 420px; text-align: center;
+    }
+    .plex-pin-box.show { display: flex; }
+    .pin-label { font-size: 11px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
+    .pin-code {
+      font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 900;
+      color: var(--plex); letter-spacing: 12px;
+      text-shadow: 0 0 20px rgba(229,160,13,0.5);
+    }
+    .pin-sub { font-size: 12px; color: var(--dim); line-height: 1.5; }
+    .pin-sub a { color: var(--plex); text-decoration: none; }
+    .pin-sub a:hover { text-decoration: underline; }
+    .pin-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--plex); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #plex-error { display: none; color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; }
+    #plex-error.show { display: block; }
+
+    /* Plex library */
+    #plex-library { display: none; }
+    #plex-library.show { display: block; }
+
+    .lib-header {
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(229,160,13,0.04);
+    }
+    .lib-server-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--plex); }
+
+    .lib-sections { display: flex; gap: 8px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+    .section-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      font-family: 'Exo 2', sans-serif; font-size: 12px; letter-spacing: 1px;
+      padding: 6px 14px; border-radius: 20px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+    }
+    .section-btn.active { border-color: var(--plex); color: var(--plex); background: rgba(229,160,13,0.08); }
+    .section-btn:hover:not(.active) { border-color: var(--dim); color: var(--text); }
+
+    .media-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;
+      padding: 16px 18px; max-height: 380px; overflow-y: auto;
+    }
+    .media-grid::-webkit-scrollbar { width: 4px; }
+    .media-grid::-webkit-scrollbar-track { background: transparent; }
+    .media-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .media-item {
+      cursor: pointer; border-radius: 8px; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      transition: all 0.2s; display: flex; flex-direction: column;
+    }
+    .media-item:hover { border-color: var(--plex); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+
+    .media-thumb {
+      width: 100%; aspect-ratio: 2/3; object-fit: cover; background: var(--panel);
+      display: flex; align-items: center; justify-content: center; font-size: 32px;
+    }
+    .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .media-thumb.no-img { font-size: 28px; min-height: 120px; }
+
+    .media-title { padding: 8px; font-size: 11px; color: var(--text); line-height: 1.3; letter-spacing: 0.3px; }
+    .media-year { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); padding: 0 8px 8px; }
+
+    .lib-loading {
+      padding: 48px; text-align: center; font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 14px;
     }
 
-    .file-name {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
-      color: var(--accent);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 300px;
+    /* Plex player */
+    #plex-player-wrap {
+      display: none; flex-direction: column;
     }
+    #plex-player-wrap.show { display: flex; }
+    #plex-video { width: 100%; max-height: 460px; background: #000; }
 
-    .btn-reset {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--dim);
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 12px;
-      letter-spacing: 2px;
-      padding: 6px 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: all 0.2s;
+    .plex-now-playing {
+      padding: 12px 18px; border-top: 1px solid var(--border);
+      background: rgba(229,160,13,0.04);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
+    .np-info { display: flex; flex-direction: column; gap: 3px; }
+    .np-title { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
+    .np-meta { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 1px; }
+    .np-actions { display: flex; gap: 8px; }
 
-    .btn-reset:hover { border-color: var(--warn); color: var(--warn); }
-
-    /* ── How it Works ── */
-    .how-section {
-      margin-top: 8px;
+    /* logout btn */
+    .btn-logout {
+      background: transparent; border: 1px solid var(--dim); color: var(--dim);
+      font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 1px;
+      padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
     }
+    .btn-logout:hover { border-color: var(--accent2); color: var(--accent2); }
 
-    .how-title {
-      font-size: 11px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--dim);
-      margin-bottom: 16px;
-      padding-left: 4px;
+    /* ── CARDS GRID ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+
+    .info-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px; position: relative; overflow: hidden; transition: border-color 0.2s;
     }
-
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
+    .info-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent); opacity: 0; transition: opacity 0.2s;
     }
+    .info-card:hover { border-color: rgba(232,168,0,0.3); }
+    .info-card:hover::after { opacity: 1; }
+    .ic-num { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--accent); margin-bottom: 6px; letter-spacing: 2px; }
+    .ic-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 5px; }
+    .ic-desc { font-size: 12px; color: var(--dim); line-height: 1.5; }
+    .ic-desc code { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #00e676; background: rgba(0,230,118,0.08); padding: 1px 5px; border-radius: 2px; }
 
-    .step-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 18px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.3s;
-    }
-
-    .step-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), transparent);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .step-card:hover { border-color: rgba(0,212,255,0.3); }
-    .step-card:hover::before { opacity: 1; }
-
-    .step-num {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      color: var(--accent);
-      margin-bottom: 8px;
-      letter-spacing: 2px;
-    }
-
-    .step-name {
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 6px;
-      letter-spacing: 1px;
-    }
-
-    .step-desc {
-      font-size: 13px;
-      color: var(--dim);
-      line-height: 1.5;
-    }
-
-    .step-desc code {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      color: var(--accent2);
-      background: rgba(0,255,157,0.08);
-      padding: 1px 5px;
-      border-radius: 3px;
-    }
-
-    /* ── Status indicator ── */
-    .state-indicator {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
-    }
-
-    .state-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .state-label { color: var(--dim); letter-spacing: 1px; font-size: 10px; }
-
-    .state-value {
-      color: var(--accent2);
-      letter-spacing: 1px;
-    }
-
-    .state-value.warn { color: var(--warn); }
-
-    /* ── Simulate button ── */
-    .sim-btn {
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      font-family: 'Rajdhani', sans-serif;
-      font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 3px;
-      padding: 10px 24px;
-      border-radius: 6px;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: all 0.25s;
-      box-shadow: 0 0 10px rgba(0,212,255,0.1);
-    }
-
-    .sim-btn:hover {
-      background: rgba(0,212,255,0.1);
-      box-shadow: var(--glow);
-    }
-
-    .sim-btn.active {
-      background: rgba(255,107,53,0.1);
-      border-color: var(--warn);
-      color: var(--warn);
-      box-shadow: 0 0 10px rgba(255,107,53,0.2);
-    }
-
-    /* ── Code block ── */
-    .code-panel {
-      background: #060a0e;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-
-    .code-header {
-      padding: 10px 16px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 11px;
-      letter-spacing: 2px;
-      color: var(--dim);
-      text-transform: uppercase;
-    }
-
-    .copy-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--dim);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 10px;
-      padding: 3px 10px;
-      border-radius: 3px;
-      cursor: pointer;
-      letter-spacing: 1px;
-      transition: all 0.2s;
-    }
-
-    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .copy-btn.copied { border-color: var(--accent2); color: var(--accent2); }
-
-    pre {
-      padding: 20px;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
-      line-height: 1.7;
-      color: #7a9ab5;
-      overflow-x: auto;
-    }
-
-    .kw { color: #569cd6; }
-    .fn { color: #dcdcaa; }
-    .str { color: #ce9178; }
-    .cm { color: #3d5a6e; }
-    .ev { color: var(--accent2); }
-
-    /* ── Footer ── */
-    footer {
-      margin-top: 48px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 2px;
-    }
-
+    /* ── FOOTER ── */
+    footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 2px; line-height: 2; }
     footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
-      .logo-text { font-size: 16px; }
-      .status-bar { display: none; }
-      .steps-grid { grid-template-columns: 1fr; }
-      .state-indicator { flex-wrap: wrap; gap: 16px; }
+      .hud { display: none; }
+      .logo-text { font-size: 14px; }
+      .tab-btn { font-size: 11px; padding: 9px 8px; }
+      .tab-btn .tab-icon { display: none; }
+      .status-row { flex-wrap: wrap; }
+      .status-cell { min-width: 50%; }
+      .media-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
     }
   </style>
 </head>
 <body>
-
 <div class="container">
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header>
     <div class="logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 4L4 10l12 6 12-6-12-6z" fill="#e8a800"/>
+          <path d="M4 22l12 6 12-6" stroke="#e8a800" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4 16l12 6 12-6" stroke="#e8a800" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
         </svg>
       </div>
-      <div>
-        <div class="logo-text">TESLA <span>VIDEO</span></div>
+      <div class="logo-text">
+        Tesla Media Center
+        <small>Drive Mode Bypass v2.0</small>
       </div>
     </div>
-    <div class="status-bar">
-      <div class="status-dot"></div>
-      <span>DRIVE MODE BYPASS</span>
-      <span id="clock">--:--:--</span>
+    <div class="hud">
+      <div class="hud-item">
+        <span class="hud-label">Modo</span>
+        <span class="hud-value" id="hud-mode">PARKED</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Bypass</span>
+        <span class="hud-value ok" id="hud-bypass">ATIVO</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Hora</span>
+        <span class="hud-value" id="hud-clock">--:--</span>
+      </div>
     </div>
   </header>
 
-  <!-- Drive mode banner -->
-  <div id="drive-banner">
-    ⚡ MODO CONDUÇÃO SIMULADO — BYPASS ATIVO — VÍDEO CONTINUA
-  </div>
+  <!-- DRIVE BANNER -->
+  <div id="drive-banner">⚡ MODO CONDUÇÃO ATIVO — BYPASS FUNCIONANDO — VÍDEO CONTINUA</div>
 
-  <!-- Status Bar -->
-  <div class="state-indicator">
-    <div class="state-item">
-      <span class="state-label">VISIBILIDADE</span>
-      <span class="state-value" id="vis-state">VISIBLE</span>
+  <!-- STATUS ROW -->
+  <div class="status-row">
+    <div class="status-cell">
+      <div class="s-label">Visibilidade</div>
+      <div class="s-val" id="s-vis">VISIBLE</div>
     </div>
-    <div class="state-item">
-      <span class="state-label">AUDIO CTX</span>
-      <span class="state-value" id="audio-state">INATIVO</span>
+    <div class="status-cell">
+      <div class="s-label">AudioCtx</div>
+      <div class="s-val off" id="s-audio">INATIVO</div>
     </div>
-    <div class="state-item">
-      <span class="state-label">WAKE LOCK</span>
-      <span class="state-value" id="wake-state">INATIVO</span>
+    <div class="status-cell">
+      <div class="s-label">Wake Lock</div>
+      <div class="s-val off" id="s-wake">INATIVO</div>
     </div>
-    <div class="state-item">
-      <span class="state-label">MODO</span>
-      <span class="state-value" id="drive-state">PARKED</span>
+    <div class="status-cell">
+      <div class="s-label">Plex</div>
+      <div class="s-val off" id="s-plex">DESLIGADO</div>
     </div>
-    <div style="margin-left:auto">
-      <button class="sim-btn" id="sim-btn" onclick="toggleSimulate()">
-        ▶ Simular Condução
-      </button>
+    <div class="status-cell">
+      <button class="sim-btn" id="sim-btn" onclick="toggleSim()">▶ Simular</button>
     </div>
   </div>
 
-  <!-- Tabs -->
+  <!-- TABS -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('youtube', this)">▶ YouTube</button>
-    <button class="tab-btn" onclick="switchTab('local', this)">⬆ Upload Local</button>
-    <button class="tab-btn" onclick="switchTab('code', this)">&lt;/&gt; Código</button>
+    <button class="tab-btn active" onclick="switchTab('yt', this)">
+      <span class="tab-icon">▶</span> YouTube
+    </button>
+    <button class="tab-btn" onclick="switchTab('local', this)">
+      <span class="tab-icon">⬆</span> Upload
+    </button>
+    <button class="tab-btn plex-tab" onclick="switchTab('plex', this)">
+      <span class="tab-icon">🎬</span> Plex
+    </button>
+    <button class="tab-btn" onclick="switchTab('code', this)">
+      <span class="tab-icon">&lt;/&gt;</span> Código
+    </button>
   </div>
 
-  <!-- Tab: YouTube -->
-  <div class="tab-panel active" id="tab-youtube">
+  <!-- ══ TAB: YOUTUBE ══ -->
+  <div class="tab-panel active" id="tab-yt">
     <div class="player-card">
       <div class="player-header">
-        <span class="player-title">YouTube — Embed Bypass</span>
-        <span class="player-badge">API ATIVA</span>
+        <span class="player-title">YouTube — Lofi Radio (demo)</span>
+        <span class="badge green">BYPASS ATIVO</span>
       </div>
-      <div class="yt-wrapper">
-        <iframe
-          id="yt-iframe"
-          src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=0&rel=0&modestbranding=1&enablejsapi=1"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          allowfullscreen>
+      <div class="yt-wrap">
+        <iframe id="yt-frame"
+          src="https://www.youtube.com/embed/jfKfPfyJRdk?rel=0&modestbranding=1&enablejsapi=1"
+          allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen>
         </iframe>
       </div>
-      <div class="video-controls-bar">
-        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim)">
-          lofi hip hop radio — beats to relax/study
-        </span>
-        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent2)">
-          IFRAME MODE ✓
-        </span>
+      <div class="bar">
+        <span class="bar-left">lofi hip hop radio — beats to relax/study</span>
+        <span class="bar-right">IFRAME ✓</span>
       </div>
     </div>
-
-    <div class="how-section">
-      <div class="how-title">Como funciona — YouTube</div>
-      <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-num">// 01</div>
-          <div class="step-name">visibilitychange</div>
-          <div class="step-desc">Quando o Tesla entra em marcha, dispara <code>hidden</code>. O script interceta e força a retoma.</div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">// 02</div>
-          <div class="step-name">AudioContext</div>
-          <div class="step-desc">Mantém o pipeline de áudio ativo via <code>WebAudio API</code>, mesmo com o browser "escondido".</div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">// 03</div>
-          <div class="step-name">Wake Lock</div>
-          <div class="step-desc">Impede o ecrã de adormecer com <code>navigator.wakeLock</code>, mantendo o contexto vivo.</div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">// 04</div>
-          <div class="step-name">postMessage</div>
-          <div class="step-desc">Para o iframe do YouTube, usa-se <code>YT.Player API</code> para forçar <code>playVideo()</code> remotamente.</div>
-        </div>
-      </div>
+    <div class="cards">
+      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">visibilitychange</div><div class="ic-desc">Tesla dispara <code>hidden</code> ao entrar em marcha. O script interceta e força a retoma imediata.</div></div>
+      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">AudioContext</div><div class="ic-desc">Pipeline de áudio mantido ativo via <code>WebAudio API</code> mesmo com browser "escondido".</div></div>
+      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Wake Lock</div><div class="ic-desc">Impede o ecrã de adormecer com <code>navigator.wakeLock</code> durante a condução.</div></div>
+      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Pause Intercept</div><div class="ic-desc">Evento <code>pause</code> intercetado: se não foi o utilizador, o vídeo retoma em 80ms.</div></div>
     </div>
   </div>
 
-  <!-- Tab: Upload Local -->
+  <!-- ══ TAB: UPLOAD ══ -->
   <div class="tab-panel" id="tab-local">
     <div class="player-card">
       <div class="player-header">
         <span class="player-title">Ficheiro Local — HTML5 Video</span>
-        <span class="player-badge">BYPASS ATIVO</span>
+        <span class="badge orange">BYPASS ATIVO</span>
       </div>
-
-      <div id="upload-area" onclick="document.getElementById('file-input').click()"
-           ondragover="event.preventDefault();this.classList.add('drag-over')"
-           ondragleave="this.classList.remove('drag-over')"
-           ondrop="handleDrop(event)">
-        <svg width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24">
+      <div id="upload-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="dropFile(event)">
+        <svg width="52" height="52" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
         </svg>
-        <p>Arrasta um vídeo para aqui</p>
-        <span>ou clica para selecionar — MP4, WebM, MOV</span>
+        <p>Arrasta o teu vídeo aqui</p>
+        <span>MP4 · WebM · MOV · AVI — ficheiro fica local, não é enviado para nenhum servidor</span>
       </div>
-
-      <input type="file" id="file-input" accept="video/*" onchange="loadLocalVideo(event)">
-
-      <div id="local-video-wrapper">
+      <input type="file" id="file-input" accept="video/*" onchange="loadFile(event)">
+      <div id="local-wrap">
         <video id="local-video" controls playsinline></video>
-        <div class="video-controls-bar">
-          <span class="file-name" id="file-name-display">—</span>
-          <button class="btn-reset" onclick="resetLocalVideo()">✕ Remover</button>
+        <div class="bar">
+          <span class="fname" id="fname">—</span>
+          <button class="btn-sm" onclick="resetLocal()">✕ Remover</button>
         </div>
       </div>
     </div>
-
-    <div class="how-section">
-      <div class="how-title">Como funciona — Vídeo Local</div>
-      <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-num">// 01</div>
-          <div class="step-name">File API</div>
-          <div class="step-desc">O ficheiro é carregado via <code>URL.createObjectURL()</code> — fica em memória, sem upload para servidor.</div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">// 02</div>
-          <div class="step-name">Pause Intercept</div>
-          <div class="step-desc">O evento <code>pause</code> é intercetado. Se não foi o utilizador, o vídeo retoma automaticamente.</div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">// 03</div>
-          <div class="step-name">AudioContext Bridge</div>
-          <div class="step-desc">O elemento <code>&lt;video&gt;</code> é ligado ao <code>AudioContext</code> para manter o contexto de áudio ativo.</div>
-        </div>
-      </div>
+    <div class="cards">
+      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">File API</div><div class="ic-desc">Carregado via <code>createObjectURL()</code> — fica em memória, zero upload.</div></div>
+      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">AudioContext Bridge</div><div class="ic-desc">O <code>&lt;video&gt;</code> é ligado ao <code>AudioContext</code> para manter o pipeline de áudio ativo.</div></div>
+      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Pause Intercept</div><div class="ic-desc">Pausa involuntária intercetada e o vídeo retoma automaticamente em milissegundos.</div></div>
     </div>
   </div>
 
-  <!-- Tab: Código -->
-  <div class="tab-panel" id="tab-code">
-    <div class="code-panel">
-      <div class="code-header">
-        <span>tesla-bypass.js — Código completo</span>
-        <button class="copy-btn" id="copy-btn" onclick="copyCode()">COPIAR</button>
+  <!-- ══ TAB: PLEX ══ -->
+  <div class="tab-panel" id="tab-plex">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title">Plex — Streaming com Drive Bypass</span>
+        <span class="badge plex" id="plex-badge">DESLIGADO</span>
       </div>
-      <pre id="code-block"><span class="cm">// ─────────────────────────────────────────────
-// Tesla Drive Mode Video Bypass
+
+      <!-- Connect screen -->
+      <div id="plex-connect">
+        <div class="plex-logo-wrap">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="4" fill="#1f1f1f"/>
+            <path d="M9 6h5.5l8.5 10-8.5 10H9l8.5-10L9 6z" fill="#e5a00d"/>
+          </svg>
+          <span class="plex-logo-text">PLEX</span>
+        </div>
+        <p class="plex-desc">Liga o teu Plex Media Server para aceder à tua biblioteca de filmes e séries com o bypass de condução ativo.</p>
+
+        <div id="server-form">
+          <div class="field-group">
+            <label class="field-label">Endereço do Servidor Plex</label>
+            <input class="field-input" type="text" id="plex-server-url"
+              placeholder="http://192.168.1.100:32400"
+              value="">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Token Plex (X-Plex-Token)</label>
+            <input class="field-input" type="password" id="plex-token"
+              placeholder="Cole aqui o teu token">
+          </div>
+          <button class="plex-btn" onclick="connectPlex()">Ligar ao Plex</button>
+          <div id="plex-error">⚠ Erro ao ligar. Verifica o URL e o token.</div>
+        </div>
+
+        <!-- PIN flow (fallback) -->
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);text-align:center">
+          — ou —
+        </div>
+        <button class="plex-btn" style="background:transparent;border:1px solid var(--plex);color:var(--plex);box-shadow:none;margin-top:4px" onclick="startPinAuth()">
+          Autenticar via plex.tv (PIN)
+        </button>
+
+        <div class="plex-pin-box" id="pin-box">
+          <div class="pin-label">Vai a plex.tv/link e introduz este código</div>
+          <div class="pin-code" id="pin-display">——</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="pin-spinner" id="pin-spinner"></div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim)">A aguardar confirmação...</span>
+          </div>
+          <div class="pin-sub">
+            Abre <a href="https://plex.tv/link" target="_blank">plex.tv/link</a> no teu telemóvel ou PC<br>
+            e introduz o código acima para autorizar.
+          </div>
+          <button class="btn-sm" onclick="cancelPin()">Cancelar</button>
+        </div>
+
+        <div style="margin-top:16px;max-width:420px;background:rgba(229,160,13,0.05);border:1px solid rgba(229,160,13,0.15);border-radius:8px;padding:14px 16px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--plex);letter-spacing:2px;margin-bottom:8px">COMO OBTER O TOKEN</div>
+          <ol style="font-size:12px;color:var(--dim);line-height:1.8;padding-left:18px">
+            <li>Abre <strong style="color:var(--text)">app.plex.tv</strong> no browser</li>
+            <li>Clica com o botão direito num filme → <em>Ver XML</em></li>
+            <li>No URL da nova tab, copia o valor de <code style="color:var(--plex);font-family:'Share Tech Mono',monospace;font-size:10px">X-Plex-Token=...</code></li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Library -->
+      <div id="plex-library">
+        <div class="lib-header">
+          <span class="lib-server-name" id="lib-server-name">🎬 A carregar...</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn-sm" onclick="refreshLibrary()">↺ Atualizar</button>
+            <button class="btn-logout" onclick="plexLogout()">Desligar</button>
+          </div>
+        </div>
+        <div class="lib-sections" id="lib-sections"></div>
+        <div id="lib-content"></div>
+      </div>
+
+      <!-- Player -->
+      <div id="plex-player-wrap">
+        <video id="plex-video" controls playsinline></video>
+        <div class="plex-now-playing">
+          <div class="np-info">
+            <div class="np-title" id="np-title">—</div>
+            <div class="np-meta" id="np-meta">—</div>
+          </div>
+          <div class="np-actions">
+            <button class="btn-sm" onclick="closePlexPlayer()">↩ Biblioteca</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cards">
+      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">Plex API</div><div class="ic-desc">Usa a <code>Plex HTTP API</code> para listar a biblioteca e obter o stream direto com o token.</div></div>
+      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Direct Play</div><div class="ic-desc">Usa <code>/video/:/transcode</code> ou direct play via <code>/library/parts</code> — sem plugin.</div></div>
+      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Wake Lock.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: CÓDIGO ══ -->
+  <div class="tab-panel" id="tab-code">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title">tesla-bypass.js — Código Completo</span>
+        <button id="copy-btn" onclick="copyCode()" style="background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 12px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">COPIAR</button>
+      </div>
+      <pre id="code-block" style="padding:22px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.75;color:#7a9ab5;overflow-x:auto;background:#040608"><span style="color:#3d5570">// ─────────────────────────────────────────────────────
+// Tesla Drive Mode Video Bypass — tesla-bypass.js
 // Funciona no browser Chromium embebido do Tesla
-// ─────────────────────────────────────────────</span>
+// ─────────────────────────────────────────────────────</span>
 
-(<span class="kw">function</span> <span class="fn">TeslaBypass</span>() {
-  <span class="kw">const</span> video = document.<span class="fn">querySelector</span>(<span class="str">'video'</span>);
-  <span class="kw">let</span> audioCtx = <span class="kw">null</span>;
-  <span class="kw">let</span> wakeLock = <span class="kw">null</span>;
-  <span class="kw">let</span> userPaused = <span class="kw">false</span>;
+(<span style="color:#569cd6">function</span> <span style="color:#dcdcaa">TeslaBypass</span>() {
+  <span style="color:#569cd6">const</span> video = document.<span style="color:#dcdcaa">querySelector</span>(<span style="color:#ce9178">'video'</span>);
+  <span style="color:#569cd6">let</span> audioCtx = <span style="color:#569cd6">null</span>;
+  <span style="color:#569cd6">let</span> wakeLock = <span style="color:#569cd6">null</span>;
+  <span style="color:#569cd6">let</span> userPaused = <span style="color:#569cd6">false</span>;
 
-  <span class="cm">// 1. Iniciar AudioContext após interação</span>
-  <span class="kw">function</span> <span class="fn">initAudio</span>() {
-    <span class="kw">if</span> (audioCtx) <span class="kw">return</span>;
-    audioCtx = <span class="kw">new</span> (window.AudioContext || window.webkitAudioContext)();
-    <span class="kw">const</span> src = audioCtx.<span class="fn">createMediaElementSource</span>(video);
-    src.<span class="fn">connect</span>(audioCtx.destination);
-    <span class="fn">updateStatus</span>(<span class="str">'audio-state'</span>, <span class="str">'ATIVO'</span>);
+  <span style="color:#3d5570">// ── 1. AudioContext — mantém pipeline de áudio ativo</span>
+  <span style="color:#569cd6">function</span> <span style="color:#dcdcaa">initAudio</span>() {
+    <span style="color:#569cd6">if</span> (audioCtx) <span style="color:#569cd6">return</span>;
+    audioCtx = <span style="color:#569cd6">new</span> (window.AudioContext || window.webkitAudioContext)();
+    <span style="color:#569cd6">const</span> src = audioCtx.<span style="color:#dcdcaa">createMediaElementSource</span>(video);
+    src.<span style="color:#dcdcaa">connect</span>(audioCtx.destination);
+  }
+  <span style="color:#3d5570">// Requer interação do utilizador para iniciar</span>
+  document.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#ce9178">'click'</span>, initAudio, { once: <span style="color:#569cd6">true</span> });
+
+  <span style="color:#3d5570">// ── 2. Wake Lock — impede o ecrã de adormecer</span>
+  <span style="color:#569cd6">async function</span> <span style="color:#dcdcaa">requestWakeLock</span>() {
+    <span style="color:#569cd6">try</span> {
+      wakeLock = <span style="color:#569cd6">await</span> navigator.wakeLock.<span style="color:#dcdcaa">request</span>(<span style="color:#ce9178">'screen'</span>);
+      wakeLock.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#ce9178">'release'</span>, () => {
+        <span style="color:#3d5570">// Recupera o wake lock quando possível</span>
+        <span style="color:#569cd6">if</span> (document.visibilityState === <span style="color:#ce9178">'visible'</span>) <span style="color:#dcdcaa">requestWakeLock</span>();
+      });
+    } <span style="color:#569cd6">catch</span> (e) { <span style="color:#3d5570">/* API não suportada */</span> }
+  }
+  <span style="color:#dcdcaa">requestWakeLock</span>();
+
+  <span style="color:#3d5570">// ── 3. O TRUQUE PRINCIPAL ─────────────────────────
+  // O Tesla dispara visibilitychange → 'hidden'
+  // quando o carro sai do lugar (entra em Drive/Reverse).
+  // O browser pausa automaticamente qualquer &lt;video&gt;.
+  // Intercetamos e forçamos a retoma imediata.</span>
+  document.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#00e676">'visibilitychange'</span>, () => {
+    <span style="color:#569cd6">if</span> (document.visibilityState === <span style="color:#ce9178">'hidden'</span>) {
+      <span style="color:#3d5570">// Retoma o AudioContext se suspenso</span>
+      <span style="color:#569cd6">if</span> (audioCtx?.state === <span style="color:#ce9178">'suspended'</span>) audioCtx.<span style="color:#dcdcaa">resume</span>();
+      <span style="color:#3d5570">// Força retoma do vídeo</span>
+      video.<span style="color:#dcdcaa">play</span>().<span style="color:#dcdcaa">catch</span>(() => {});
+    } <span style="color:#569cd6">else</span> {
+      <span style="color:#3d5570">// Recupera wake lock quando visível</span>
+      <span style="color:#569cd6">if</span> (!wakeLock || wakeLock.released) <span style="color:#dcdcaa">requestWakeLock</span>();
+    }
+  });
+
+  <span style="color:#3d5570">// ── 4. Interceta pausas involuntárias
+  // Além do visibilitychange, o Tesla pode tentar pausar
+  // o vídeo por outros meios. Este handler garante a retoma.</span>
+  video.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#00e676">'pause'</span>, () => {
+    <span style="color:#569cd6">if</span> (!userPaused) {
+      <span style="color:#dcdcaa">setTimeout</span>(() => video.<span style="color:#dcdcaa">play</span>().<span style="color:#dcdcaa">catch</span>(() => {}), 80);
+    }
+  });
+
+  <span style="color:#3d5570">// Distingue pausa do utilizador vs pausa do sistema</span>
+  video.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#00e676">'click'</span>, () => {
+    userPaused = video.paused ? <span style="color:#569cd6">false</span> : <span style="color:#569cd6">true</span>;
+  });
+
+  <span style="color:#3d5570">// ── 5. PLEX — fetch com token direto ao servidor</span>
+  <span style="color:#569cd6">async function</span> <span style="color:#dcdcaa">plexFetch</span>(serverUrl, token, path) {
+    <span style="color:#569cd6">const</span> url = <span style="color:#ce9178">`${serverUrl}${path}?X-Plex-Token=${token}`</span>;
+    <span style="color:#569cd6">const</span> res = <span style="color:#569cd6">await</span> <span style="color:#dcdcaa">fetch</span>(url, {
+      headers: {
+        <span style="color:#ce9178">'Accept'</span>: <span style="color:#ce9178">'application/json'</span>,
+        <span style="color:#ce9178">'X-Plex-Token'</span>: token,
+        <span style="color:#ce9178">'X-Plex-Product'</span>: <span style="color:#ce9178">'Tesla Media Center'</span>,
+        <span style="color:#ce9178">'X-Plex-Device'</span>: <span style="color:#ce9178">'Tesla'</span>,
+      }
+    });
+    <span style="color:#569cd6">return</span> res.<span style="color:#dcdcaa">json</span>();
   }
 
-  document.<span class="fn">addEventListener</span>(<span class="str">'click'</span>, initAudio, { once: <span class="kw">true</span> });
-
-  <span class="cm">// 2. Wake Lock — mantém ecrã ativo</span>
-  <span class="kw">async function</span> <span class="fn">requestWakeLock</span>() {
-    <span class="kw">try</span> {
-      wakeLock = <span class="kw">await</span> navigator.wakeLock.<span class="fn">request</span>(<span class="str">'screen'</span>);
-      <span class="fn">updateStatus</span>(<span class="str">'wake-state'</span>, <span class="str">'ATIVO'</span>);
-    } <span class="kw">catch</span> (e) {
-      <span class="fn">updateStatus</span>(<span class="str">'wake-state'</span>, <span class="str">'N/D'</span>);
-    }
+  <span style="color:#3d5570">// Obter URL de stream direto de um item Plex</span>
+  <span style="color:#569cd6">async function</span> <span style="color:#dcdcaa">getPlexStream</span>(serverUrl, token, ratingKey) {
+    <span style="color:#569cd6">const</span> data = <span style="color:#569cd6">await</span> <span style="color:#dcdcaa">plexFetch</span>(serverUrl, token,
+      <span style="color:#ce9178">`/library/metadata/${ratingKey}`</span>);
+    <span style="color:#569cd6">const</span> part = data?.MediaContainer?.Metadata?.[<span style="color:#b5cea8">0</span>]?.Media?.[<span style="color:#b5cea8">0</span>]?.Part?.[<span style="color:#b5cea8">0</span>];
+    <span style="color:#569cd6">if</span> (!part?.key) <span style="color:#569cd6">throw new</span> Error(<span style="color:#ce9178">'Stream não encontrado'</span>);
+    <span style="color:#569cd6">return</span> <span style="color:#ce9178">`${serverUrl}${part.key}?X-Plex-Token=${token}`</span>;
   }
-  <span class="fn">requestWakeLock</span>();
-
-  <span class="cm">// 3. O truque principal — visibilitychange
-  // O Tesla dispara 'hidden' quando o carro entra em marcha</span>
-  document.<span class="fn">addEventListener</span>(<span class="ev">'visibilitychange'</span>, () => {
-    <span class="kw">const</span> state = document.visibilityState;
-    <span class="fn">updateStatus</span>(<span class="str">'vis-state'</span>, state.toUpperCase());
-
-    <span class="kw">if</span> (state === <span class="str">'hidden'</span>) {
-      <span class="cm">// Retoma áudio e vídeo</span>
-      <span class="kw">if</span> (audioCtx?.state === <span class="str">'suspended'</span>) audioCtx.<span class="fn">resume</span>();
-      video.<span class="fn">play</span>().<span class="fn">catch</span>(() => {});
-    } <span class="kw">else</span> {
-      <span class="cm">// Recupera wake lock quando visível de novo</span>
-      <span class="kw">if</span> (!wakeLock || wakeLock.released) <span class="fn">requestWakeLock</span>();
-    }
-  });
-
-  <span class="cm">// 4. Interceta pausa não intencional</span>
-  video.<span class="fn">addEventListener</span>(<span class="ev">'pause'</span>, () => {
-    <span class="kw">if</span> (!userPaused) {
-      <span class="fn">setTimeout</span>(() => video.<span class="fn">play</span>().<span class="fn">catch</span>(() => {}), 80);
-    }
-  });
-
-  <span class="cm">// Detectar pausa intencional do utilizador</span>
-  video.<span class="fn">addEventListener</span>(<span class="ev">'click'</span>, () => {
-    userPaused = video.paused ? <span class="kw">false</span> : <span class="kw">true</span>;
-  });
 
 })();</pre>
+    </div>
+
+    <div class="cards" style="margin-top:16px">
+      <div class="info-card"><div class="ic-num">// resumo</div><div class="ic-title">Como Usar</div><div class="ic-desc">Inclui este script em qualquer página com um <code>&lt;video&gt;</code> para ativar o bypass no Tesla.</div></div>
+      <div class="info-card"><div class="ic-num">// plex</div><div class="ic-title">Plex Stream URL</div><div class="ic-desc">Usa <code>plexFetch()</code> para obter o URL direto do ficheiro e atribui ao <code>video.src</code>.</div></div>
+      <div class="info-card"><div class="ic-num">// compat</div><div class="ic-title">Compatibilidade</div><div class="ic-desc">Testado no Tesla Chromium. Funciona também em qualquer browser moderno com <code>visibilitychange</code>.</div></div>
     </div>
   </div>
 
   <footer>
-    <p>Tesla Video Bypass Demo — <a href="https://github.com" target="_blank">GitHub Pages</a></p>
-    <p style="margin-top:8px;font-size:10px;opacity:0.4">USE APENAS COMO PASSAGEIRO. NÃO CONDUZAS COM DISTRAÇÕES.</p>
+    <p>Tesla Media Center — <a href="https://github.com/DavidFFerrreira/TeslaMediaCenter" target="_blank">github.com/DavidFFerrreira/TeslaMediaCenter</a></p>
+    <p style="opacity:0.4;margin-top:4px">⚠ Usa apenas como passageiro. Conduz com atenção.</p>
   </footer>
 
 </div>
 
 <script>
-  // ── Clock ──
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent =
-      now.toTimeString().slice(0, 8);
+// ── Copy Code ──
+function copyCode() {
+  const text = document.getElementById('code-block').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'COPIADO ✓';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color = 'var(--accent)';
+    setTimeout(() => {
+      btn.textContent = 'COPIAR';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color = 'var(--dim)';
+    }, 2000);
+  });
+}
+
+// ════════════════════════════════════════
+// BYPASS ENGINE — aplica a todos os vídeos
+// ════════════════════════════════════════
+let audioCtx = null;
+let wakeLock = null;
+let simActive = false;
+let userPausedLocal = false;
+let userPausedPlex = false;
+
+function setStatus(id, val, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  el.className = 's-val' + (cls ? ' ' + cls : '');
+}
+
+// Wake Lock
+async function grabWakeLock() {
+  try {
+    if (wakeLock && !wakeLock.released) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    setStatus('s-wake', 'ATIVO', '');
+    wakeLock.addEventListener('release', () => setStatus('s-wake', 'LIBERADO', 'warn'));
+  } catch (e) {
+    setStatus('s-wake', 'N/D', 'off');
   }
-  updateClock();
-  setInterval(updateClock, 1000);
+}
+grabWakeLock();
 
-  // ── Tabs ──
-  function switchTab(name, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    btn.classList.add('active');
-  }
-
-  // ── Status helper ──
-  function updateStatus(id, val) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = val;
-    el.className = 'state-value' + (val === 'HIDDEN' || val === 'DRIVING' ? ' warn' : '');
-  }
-
-  // ── Simulate Drive Mode ──
-  let simActive = false;
-  function toggleSimulate() {
-    simActive = !simActive;
-    const btn = document.getElementById('sim-btn');
-    const banner = document.getElementById('drive-banner');
-
-    if (simActive) {
-      btn.textContent = '■ Parar Simulação';
-      btn.classList.add('active');
-      banner.classList.add('active');
-      updateStatus('drive-state', 'DRIVING');
-      updateStatus('vis-state', 'HIDDEN (SIM)');
-      // Trigger the bypass logic manually
-      document.dispatchEvent(new Event('visibilitychange'));
-      // Also handle local video
-      const lv = document.getElementById('local-video');
-      if (lv && lv.src) { lv.play().catch(() => {}); }
-    } else {
-      btn.textContent = '▶ Simular Condução';
-      btn.classList.remove('active');
-      banner.classList.remove('active');
-      updateStatus('drive-state', 'PARKED');
-      updateStatus('vis-state', 'VISIBLE');
+// AudioContext init (precisa de interação)
+function ensureAudio(videoEl) {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (videoEl) {
+      const src = audioCtx.createMediaElementSource(videoEl);
+      src.connect(audioCtx.destination);
     }
+    setStatus('s-audio', 'ATIVO', '');
+  } catch(e) {}
+}
+
+// visibilitychange — o truque principal
+document.addEventListener('visibilitychange', () => {
+  const hidden = document.visibilityState === 'hidden';
+  if (!simActive) setStatus('s-vis', hidden ? 'HIDDEN' : 'VISIBLE', hidden ? 'warn' : '');
+
+  if (hidden || simActive) {
+    if (audioCtx?.state === 'suspended') audioCtx.resume();
+    resumeAllVideos();
+  } else {
+    grabWakeLock();
   }
+});
 
-  // ── Local Video ──
-  let userPaused = false;
-  let audioCtx = null;
+function resumeAllVideos() {
+  ['local-video','plex-video'].forEach(id => {
+    const v = document.getElementById(id);
+    if (v && v.src && !v.paused) return;
+    if (v && v.src) v.play().catch(()=>{});
+  });
+}
 
-  function loadLocalVideo(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    _loadFile(file);
+function installBypass(videoEl, isPausedRef) {
+  videoEl.addEventListener('pause', () => {
+    if (!isPausedRef.value) setTimeout(() => videoEl.play().catch(()=>{}), 80);
+  });
+}
+
+// ── Simulate Drive ──
+function toggleSim() {
+  simActive = !simActive;
+  const btn = document.getElementById('sim-btn');
+  const banner = document.getElementById('drive-banner');
+  const hudMode = document.getElementById('hud-mode');
+
+  if (simActive) {
+    btn.textContent = '■ Parar';
+    btn.classList.add('active');
+    banner.classList.add('show');
+    hudMode.textContent = 'DRIVING';
+    hudMode.className = 'hud-value warn';
+    setStatus('s-vis', 'HIDDEN (SIM)', 'warn');
+    if (audioCtx?.state === 'suspended') audioCtx.resume();
+    resumeAllVideos();
+  } else {
+    btn.textContent = '▶ Simular';
+    btn.classList.remove('active');
+    banner.classList.remove('show');
+    hudMode.textContent = 'PARKED';
+    hudMode.className = 'hud-value';
+    setStatus('s-vis', 'VISIBLE', '');
   }
+}
 
-  function handleDrop(event) {
-    event.preventDefault();
-    document.getElementById('upload-area').classList.remove('drag-over');
-    const file = event.dataTransfer.files[0];
-    if (file && file.type.startsWith('video/')) _loadFile(file);
+// ── Clock ──
+setInterval(() => {
+  const t = new Date();
+  document.getElementById('hud-clock').textContent =
+    String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+}, 1000);
+document.getElementById('hud-clock').textContent = (() => {
+  const t = new Date();
+  return String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+})();
+
+// ── Tabs ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════════
+// LOCAL VIDEO
+// ════════════════════════════════════════
+const localPaused = { value: false };
+
+function loadFile(e) {
+  const file = e.target.files[0];
+  if (file) _loadLocalFile(file);
+}
+function dropFile(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('video/')) _loadLocalFile(file);
+}
+function _loadLocalFile(file) {
+  const video = document.getElementById('local-video');
+  video.src = URL.createObjectURL(file);
+  document.getElementById('upload-zone').style.display = 'none';
+  const wrap = document.getElementById('local-wrap');
+  wrap.style.display = 'flex';
+  document.getElementById('fname').textContent = file.name;
+  installBypass(video, localPaused);
+  video.addEventListener('click', () => { localPaused.value = !video.paused; }, { once: false });
+  video.play().catch(()=>{});
+}
+function resetLocal() {
+  const video = document.getElementById('local-video');
+  URL.revokeObjectURL(video.src);
+  video.src = '';
+  document.getElementById('local-wrap').style.display = 'none';
+  document.getElementById('upload-zone').style.display = 'flex';
+  document.getElementById('file-input').value = '';
+}
+
+// ════════════════════════════════════════
+// PLEX INTEGRATION
+// ════════════════════════════════════════
+let plexToken = '';
+let plexServerUrl = '';
+let plexSections = [];
+let pinPollInterval = null;
+const plexPaused = { value: false };
+
+const CLIENT_ID = 'tesla-media-center-' + Math.random().toString(36).slice(2);
+
+function connectPlex() {
+  const url = document.getElementById('plex-server-url').value.trim().replace(/\/$/, '');
+  const token = document.getElementById('plex-token').value.trim();
+  if (!url || !token) { showPlexError('Preenche o URL do servidor e o token.'); return; }
+  plexServerUrl = url;
+  plexToken = token;
+  fetchPlexLibrary();
+}
+
+function showPlexError(msg) {
+  const el = document.getElementById('plex-error');
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+async function fetchPlexLibrary() {
+  document.getElementById('plex-connect').style.display = 'none';
+  document.getElementById('plex-library').classList.add('show');
+  document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><div class="pin-spinner"></div><span>A carregar biblioteca...</span></div>';
+
+  try {
+    // Get server info
+    const infoRes = await plexFetch(`/`);
+    const serverName = infoRes?.MediaContainer?.friendlyName || plexServerUrl;
+    document.getElementById('lib-server-name').textContent = '🎬 ' + serverName;
+
+    // Get sections
+    const secRes = await plexFetch('/library/sections');
+    plexSections = secRes?.MediaContainer?.Directory || [];
+
+    const sectionsEl = document.getElementById('lib-sections');
+    sectionsEl.innerHTML = '';
+    plexSections.forEach((sec, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'section-btn' + (i === 0 ? ' active' : '');
+      btn.textContent = sec.title;
+      btn.onclick = () => {
+        document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadSection(sec.key);
+      };
+      sectionsEl.appendChild(btn);
+    });
+
+    if (plexSections.length > 0) loadSection(plexSections[0].key);
+    else document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><span>Nenhuma biblioteca encontrada.</span></div>';
+
+    setStatus('s-plex', 'LIGADO', '');
+    document.getElementById('plex-badge').textContent = 'LIGADO';
+    document.getElementById('plex-badge').className = 'badge plex';
+
+  } catch (e) {
+    document.getElementById('plex-connect').style.display = 'flex';
+    document.getElementById('plex-library').classList.remove('show');
+    showPlexError('Não foi possível ligar. Verifica o servidor, token e CORS.');
+    console.error(e);
   }
+}
 
-  function _loadFile(file) {
-    const video = document.getElementById('local-video');
-    const url = URL.createObjectURL(file);
-    video.src = url;
-    document.getElementById('upload-area').style.display = 'none';
-    const wrapper = document.getElementById('local-video-wrapper');
-    wrapper.style.display = 'flex';
-    document.getElementById('file-name-display').textContent = file.name;
-
-    // Init bypass for local video
-    initVideoBypass(video);
-    video.play().catch(() => {});
+async function loadSection(key) {
+  document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><div class="pin-spinner"></div><span>A carregar...</span></div>';
+  try {
+    const res = await plexFetch(`/library/sections/${key}/all`);
+    const items = res?.MediaContainer?.Metadata || res?.MediaContainer?.Video || [];
+    renderMediaGrid(items);
+  } catch(e) {
+    document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><span style="color:var(--accent2)">Erro ao carregar secção.</span></div>';
   }
+}
 
-  function resetLocalVideo() {
-    const video = document.getElementById('local-video');
-    URL.revokeObjectURL(video.src);
-    video.src = '';
-    document.getElementById('local-video-wrapper').style.display = 'none';
-    document.getElementById('upload-area').style.display = 'flex';
-    document.getElementById('file-input').value = '';
-    audioCtx = null;
-    updateStatus('audio-state', 'INATIVO');
+function renderMediaGrid(items) {
+  if (!items.length) {
+    document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><span>Biblioteca vazia.</span></div>';
+    return;
   }
+  const grid = document.createElement('div');
+  grid.className = 'media-grid';
 
-  function initVideoBypass(video) {
-    // AudioContext
-    document.addEventListener('click', function initAC() {
-      if (audioCtx) return;
+  items.slice(0, 60).forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'media-item';
+
+    const thumbUrl = item.thumb
+      ? `${plexServerUrl}${item.thumb}?X-Plex-Token=${plexToken}`
+      : null;
+
+    el.innerHTML = `
+      <div class="media-thumb ${thumbUrl ? '' : 'no-img'}">
+        ${thumbUrl
+          ? `<img src="${thumbUrl}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='🎬'">`
+          : '🎬'}
+      </div>
+      <div class="media-title">${item.title || 'Sem título'}</div>
+      ${item.year ? `<div class="media-year">${item.year}</div>` : ''}
+    `;
+
+    el.onclick = () => playPlexItem(item);
+    grid.appendChild(el);
+  });
+
+  document.getElementById('lib-content').innerHTML = '';
+  document.getElementById('lib-content').appendChild(grid);
+}
+
+async function playPlexItem(item) {
+  // Get media parts
+  try {
+    const res = await plexFetch(`/library/metadata/${item.ratingKey}`);
+    const media = res?.MediaContainer?.Metadata?.[0]?.Media?.[0];
+    const part = media?.Part?.[0];
+
+    if (!part?.key) { alert('Não foi possível obter o stream.'); return; }
+
+    const streamUrl = `${plexServerUrl}${part.key}?X-Plex-Token=${plexToken}&download=1`;
+
+    const video = document.getElementById('plex-video');
+    video.src = streamUrl;
+
+    // Show player
+    document.getElementById('plex-library').classList.remove('show');
+    const playerWrap = document.getElementById('plex-player-wrap');
+    playerWrap.classList.add('show');
+
+    document.getElementById('np-title').textContent = item.title;
+    document.getElementById('np-meta').textContent =
+      [item.year, item.duration ? Math.round(item.duration/60000)+'min' : null].filter(Boolean).join(' · ');
+
+    installBypass(video, plexPaused);
+    video.addEventListener('click', () => { plexPaused.value = !video.paused; });
+    ensureAudio(video);
+    video.play().catch(()=>{});
+
+  } catch(e) {
+    alert('Erro ao iniciar o vídeo: ' + e.message);
+  }
+}
+
+function closePlexPlayer() {
+  const video = document.getElementById('plex-video');
+  video.pause();
+  video.src = '';
+  document.getElementById('plex-player-wrap').classList.remove('show');
+  document.getElementById('plex-library').classList.add('show');
+}
+
+function plexLogout() {
+  plexToken = '';
+  plexServerUrl = '';
+  document.getElementById('plex-library').classList.remove('show');
+  document.getElementById('plex-player-wrap').classList.remove('show');
+  document.getElementById('plex-connect').style.display = 'flex';
+  setStatus('s-plex', 'DESLIGADO', 'off');
+  document.getElementById('plex-badge').textContent = 'DESLIGADO';
+}
+
+function refreshLibrary() { if (plexSections.length) loadSection(plexSections[0].key); }
+
+async function plexFetch(path) {
+  const url = `${plexServerUrl}${path}${path.includes('?') ? '&' : '?'}X-Plex-Token=${plexToken}&X-Plex-Client-Identifier=${CLIENT_ID}`;
+  const res = await fetch(url, {
+    headers: {
+      'Accept': 'application/json',
+      'X-Plex-Token': plexToken,
+      'X-Plex-Client-Identifier': CLIENT_ID,
+      'X-Plex-Product': 'Tesla Media Center',
+      'X-Plex-Version': '2.0',
+      'X-Plex-Platform': 'Chrome',
+      'X-Plex-Device': 'Tesla',
+    }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── PIN / OAuth flow ──
+async function startPinAuth() {
+  try {
+    const res = await fetch('https://plex.tv/api/v2/pins', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Plex-Product': 'Tesla Media Center',
+        'X-Plex-Client-Identifier': CLIENT_ID,
+      },
+      body: JSON.stringify({ strong: true })
+    });
+    const pin = await res.json();
+
+    document.getElementById('pin-display').textContent = pin.code;
+    document.getElementById('pin-box').classList.add('show');
+
+    pinPollInterval = setInterval(async () => {
       try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const src = audioCtx.createMediaElementSource(video);
-        src.connect(audioCtx.destination);
-        updateStatus('audio-state', 'ATIVO');
+        const checkRes = await fetch(`https://plex.tv/api/v2/pins/${pin.id}`, {
+          headers: {
+            'Accept': 'application/json',
+            'X-Plex-Client-Identifier': CLIENT_ID,
+            'X-Plex-Product': 'Tesla Media Center',
+          }
+        });
+        const data = await checkRes.json();
+        if (data.authToken) {
+          clearInterval(pinPollInterval);
+          plexToken = data.authToken;
+          document.getElementById('plex-token').value = plexToken;
+          document.getElementById('pin-box').classList.remove('show');
+          // Try to auto-connect with plex.tv relay if no server URL
+          if (!document.getElementById('plex-server-url').value.trim()) {
+            await discoverServer();
+          } else {
+            connectPlex();
+          }
+        }
       } catch(e) {}
-    }, { once: true });
+    }, 2000);
 
-    // Wake Lock
-    requestWakeLock();
+    // Stop after 5min
+    setTimeout(() => cancelPin(), 300000);
+  } catch(e) {
+    showPlexError('Erro ao iniciar autenticação PIN. Tenta o método do token manual.');
+  }
+}
 
-    // visibilitychange bypass
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' || simActive) {
-        if (audioCtx?.state === 'suspended') audioCtx.resume();
-        video.play().catch(() => {});
-      } else {
-        requestWakeLock();
+async function discoverServer() {
+  try {
+    const res = await fetch(`https://plex.tv/api/v2/resources?includeHttps=1&includeRelay=1&includeIPv6=1`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Plex-Token': plexToken,
+        'X-Plex-Client-Identifier': CLIENT_ID,
+        'X-Plex-Product': 'Tesla Media Center',
       }
     });
-
-    // Pause intercept
-    video.addEventListener('pause', () => {
-      if (!userPaused) setTimeout(() => video.play().catch(()=>{}), 80);
-    });
-
-    video.addEventListener('click', () => {
-      userPaused = video.paused ? false : true;
-    });
-  }
-
-  // Wake Lock
-  let wakeLock = null;
-  async function requestWakeLock() {
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      updateStatus('wake-state', 'ATIVO');
-    } catch(e) {
-      updateStatus('wake-state', 'N/D');
+    const resources = await res.json();
+    const server = resources.find(r => r.provides === 'server');
+    if (server) {
+      // Try local connection first, then relay
+      const local = server.connections.find(c => c.local && c.uri.startsWith('http'));
+      const relay = server.connections.find(c => c.relay);
+      const uri = local?.uri || relay?.uri || server.connections[0]?.uri;
+      if (uri) {
+        plexServerUrl = uri;
+        document.getElementById('plex-server-url').value = uri;
+        fetchPlexLibrary();
+        return;
+      }
     }
+    showPlexError('Servidor encontrado mas sem URI acessível. Introduz o URL manualmente.');
+  } catch(e) {
+    showPlexError('Não foi possível descobrir o servidor. Introduz o URL manualmente.');
   }
+}
 
-  document.addEventListener('visibilitychange', () => {
-    const state = document.visibilityState;
-    if (!simActive) updateStatus('vis-state', state.toUpperCase());
-    if (state === 'visible' && (!wakeLock || wakeLock.released)) requestWakeLock();
-  });
-  requestWakeLock();
+function cancelPin() {
+  clearInterval(pinPollInterval);
+  document.getElementById('pin-box').classList.remove('show');
+}
 
-  // Copy code
-  function copyCode() {
-    const code = document.getElementById('code-block').innerText;
-    navigator.clipboard.writeText(code).then(() => {
-      const btn = document.getElementById('copy-btn');
-      btn.textContent = 'COPIADO ✓';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('copied'); }, 2000);
-    });
-  }
+// User interaction → AudioContext
+document.addEventListener('click', () => {
+  const active = document.querySelector('.tab-panel.active');
+  let vid = active?.querySelector('video');
+  ensureAudio(vid);
+}, { once: true });
 </script>
 </body>
 </html>
