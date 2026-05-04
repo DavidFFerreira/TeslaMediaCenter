@@ -1149,16 +1149,6 @@
   </div>
 
   <footer>
-    <div style="margin-bottom:24px;padding:18px 20px;background:rgba(232,168,0,0.05);border:1px solid rgba(232,168,0,0.18);border-radius:12px;display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;">
-      <a href="https://paypal.me/Davidfferreira1986?locale.x=pt_PT&country.x=PT" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
-        <img src="https://em-content.zobj.net/source/microsoft/379/hot-beverage_2615.png" alt="☕" style="width:40px;height:40px;filter:drop-shadow(0 0 8px rgba(232,168,0,0.5));">
-        <span style="font-family:'Exo 2',sans-serif;font-size:13px;color:var(--text);line-height:1.5;text-align:left;">
-          <span style="display:block;font-weight:600;color:var(--accent);font-size:14px;letter-spacing:0.5px;">Gostaste do projeto?</span>
-          Podes poupar em gasolina, mas o café do developer ainda custa dinheiro ☕<br>
-          <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);">Convida-me a um café → paypal.me/Davidfferreira1986</span>
-        </span>
-      </a>
-    </div>
     <p>Tesla Media Center — <a href="https://github.com/DavidFFerrreira/TeslaMediaCenter" target="_blank">github.com/DavidFFerrreira/TeslaMediaCenter</a></p>
     <p style="opacity:0.4;margin-top:4px">⚠ Usa apenas como passageiro. Conduz com atenção.</p>
   </footer>
@@ -1212,19 +1202,15 @@ async function grabWakeLock() {
 grabWakeLock();
 
 // AudioContext init (precisa de interação)
-const audioNodes = new WeakMap();
 function ensureAudio(videoEl) {
+  if (audioCtx) return;
   try {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      setStatus('s-audio', 'ATIVO', '');
-    }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    if (videoEl && !audioNodes.has(videoEl)) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (videoEl) {
       const src = audioCtx.createMediaElementSource(videoEl);
       src.connect(audioCtx.destination);
-      audioNodes.set(videoEl, src);
     }
+    setStatus('s-audio', 'ATIVO', '');
   } catch(e) {}
 }
 
@@ -1233,63 +1219,26 @@ document.addEventListener('visibilitychange', () => {
   const hidden = document.visibilityState === 'hidden';
   if (!simActive) setStatus('s-vis', hidden ? 'HIDDEN' : 'VISIBLE', hidden ? 'warn' : '');
 
-  if (hidden) {
+  if (hidden || simActive) {
     if (audioCtx?.state === 'suspended') audioCtx.resume();
     resumeAllVideos();
-    // Retry loop: Tesla may delay the pause event by up to 500ms
-    let retries = 0;
-    const retryInterval = setInterval(() => {
-      if (document.visibilityState !== 'hidden' || retries++ > 10) { clearInterval(retryInterval); return; }
-      if (audioCtx?.state === 'suspended') audioCtx.resume();
-      resumeAllVideos();
-    }, 150);
   } else {
-    // Re-grab wake lock when screen becomes visible again (Tesla releases it on drive mode)
     grabWakeLock();
   }
-});
-
-// Also handle page freeze event (some Chromium versions use this instead of visibilitychange)
-document.addEventListener('freeze', () => {
-  if (audioCtx?.state === 'suspended') audioCtx.resume();
-  resumeAllVideos();
-});
-window.addEventListener('pagehide', () => {
-  resumeAllVideos();
-});
-window.addEventListener('blur', () => {
-  if (audioCtx?.state === 'suspended') audioCtx.resume();
-  resumeAllVideos();
 });
 
 function resumeAllVideos() {
   ['local-video','plex-video','jellyfin-video','iptv-video'].forEach(id => {
     const v = document.getElementById(id);
-    if (v && v.src && v.paused) v.play().catch(()=>{});
+    if (v && v.src && !v.paused) return;
+    if (v && v.src) v.play().catch(()=>{});
   });
-  // Also resume YouTube iframe via postMessage
-  const ytFrame = document.getElementById('yt-frame');
-  if (ytFrame && ytFrame.src && ytFrame.src !== 'about:blank') {
-    try { ytFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
-  }
 }
 
 function installBypass(videoEl, isPausedRef) {
-  // Remove previous listeners by cloning... instead we track with a flag
-  if (videoEl._bypassInstalled) return;
-  videoEl._bypassInstalled = true;
-
   videoEl.addEventListener('pause', () => {
-    if (!isPausedRef.value) {
-      setTimeout(() => { if (videoEl.paused && !isPausedRef.value) videoEl.play().catch(()=>{}); }, 80);
-      setTimeout(() => { if (videoEl.paused && !isPausedRef.value) videoEl.play().catch(()=>{}); }, 300);
-      setTimeout(() => { if (videoEl.paused && !isPausedRef.value) videoEl.play().catch(()=>{}); }, 800);
-    }
+    if (!isPausedRef.value) setTimeout(() => videoEl.play().catch(()=>{}), 80);
   });
-
-  // Re-play after buffering/stall
-  videoEl.addEventListener('stalled', () => { if (!isPausedRef.value) setTimeout(() => videoEl.play().catch(()=>{}), 500); });
-  videoEl.addEventListener('waiting', () => { if (!isPausedRef.value && document.visibilityState === 'hidden') videoEl.play().catch(()=>{}); });
 }
 
 // ── Simulate Drive ──
@@ -1308,8 +1257,6 @@ function toggleSim() {
     setStatus('s-vis', 'HIDDEN (SIM)', 'warn');
     if (audioCtx?.state === 'suspended') audioCtx.resume();
     resumeAllVideos();
-    setTimeout(resumeAllVideos, 150);
-    setTimeout(resumeAllVideos, 400);
   } else {
     btn.textContent = '▶ Simular';
     btn.classList.remove('active');
