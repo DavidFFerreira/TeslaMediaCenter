@@ -108,17 +108,6 @@ Com o vídeo a tocar, podes usar os botões **◀ Anterior** e **Próximo ▶** 
 > **Nota:** O Plex Server precisa de ter CORS permissivo ou estar acessível via HTTPS para funcionar no GitHub Pages. Para uso local na rede Wi-Fi do carro funciona sem restrições.
 
 ---
-
-## Publicar no GitHub Pages
-
-```
-Settings → Pages → Deploy from branch → main / (root) → Save
-```
-
-URL: `https://SEU-USERNAME.github.io/TeslaMediaCenter`
-
----
-
 ## ⚠️ Aviso
 
 Este projeto é apenas para fins educativos. Não uses o ecrã do Tesla para ver vídeo enquanto conduzes — é ilegal e perigoso.
