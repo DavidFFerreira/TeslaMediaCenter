@@ -33,6 +33,7 @@ O vídeo/áudio continua a tocar normalmente. Se o ecrã do Tesla desligar momen
 | Tab | Descrição |
 |---|---|
 | **YouTube** | Pesquisa de vídeos integrada + embed com bypass de condução ativo |
+| **Netflix** | Pesquisa de vídeos integrada + embed com bypass de condução ativo |
 | **Upload** | Carrega qualquer MP4/WebM local (fica em memória, sem upload) |
 | **Plex** | Liga ao teu Plex Media Server e reproduz filmes/séries com bypass |
 | **JellyFin** | Liga ao teu JellyFin Media Server e reproduz filmes/séries com bypass |
