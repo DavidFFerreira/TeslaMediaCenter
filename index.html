@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tesla Video Player — Drive Mode Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080c10;
+      --surface: #0d1219;
+      --panel: #111820;
+      --border: #1e2d3d;
+      --accent: #00d4ff;
+      --accent2: #00ff9d;
+      --warn: #ff6b35;
+      --text: #c8dce8;
+      --dim: #4a6070;
+      --glow: 0 0 20px rgba(0,212,255,0.3);
+      --glow2: 0 0 20px rgba(0,255,157,0.3);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.07) 2px,
+        rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* Grid background */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px; height: 44px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--glow), inset 0 0 10px rgba(0,212,255,0.1);
+      animation: pulse-border 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-border {
+      0%,100% { box-shadow: var(--glow), inset 0 0 10px rgba(0,212,255,0.1); }
+      50% { box-shadow: 0 0 30px rgba(0,212,255,0.5), inset 0 0 20px rgba(0,212,255,0.2); }
+    }
+
+    .logo-icon svg { width: 22px; height: 22px; fill: var(--accent); }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 8px var(--accent2);
+      animation: blink 2s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0.2; } }
+
+    /* ── Drive Mode Banner ── */
+    #drive-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,107,53,0.05));
+      border: 1px solid rgba(255,107,53,0.5);
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: var(--warn);
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(255,107,53,0.15);
+    }
+
+    #drive-banner.active { display: block; animation: slideDown 0.4s ease; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--dim);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .tab-btn.active {
+      background: rgba(0,212,255,0.1);
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(0,212,255,0.2);
+    }
+
+    .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    /* ── Player Card ── */
+    .player-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+    }
+
+    .player-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,212,255,0.03);
+    }
+
+    .player-title {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .player-badge {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      letter-spacing: 1px;
+    }
+
+    /* YouTube embed */
+    .yt-wrapper {
+      position: relative;
+      padding-top: 56.25%;
+      background: #000;
+    }
+
+    .yt-wrapper iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Upload player */
+    #upload-area {
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border: 2px dashed var(--border);
+      margin: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(0,212,255,0.02);
+    }
+
+    #upload-area:hover, #upload-area.drag-over {
+      border-color: var(--accent);
+      background: rgba(0,212,255,0.05);
+    }
+
+    #upload-area svg { opacity: 0.4; transition: opacity 0.3s; }
+    #upload-area:hover svg { opacity: 0.8; }
+
+    #upload-area p {
+      font-size: 15px;
+      letter-spacing: 1px;
+      color: var(--dim);
+    }
+
+    #upload-area span {
+      font-size: 12px;
+      color: var(--dim);
+      opacity: 0.6;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    #file-input { display: none; }
+
+    #local-video-wrapper {
+      display: none;
+      flex-direction: column;
+    }
+
+    #local-video-wrapper video {
+      width: 100%;
+      max-height: 480px;
+      background: #000;
+    }
+
+    .video-controls-bar {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.3);
+      border-top: 1px solid var(--border);
+    }
+
+    .file-name {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 300px;
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .btn-reset:hover { border-color: var(--warn); color: var(--warn); }
+
+    /* ── How it Works ── */
+    .how-section {
+      margin-top: 8px;
+    }
+
+    .how-title {
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 16px;
+      padding-left: 4px;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .step-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .step-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .step-card:hover { border-color: rgba(0,212,255,0.3); }
+    .step-card:hover::before { opacity: 1; }
+
+    .step-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .step-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.5;
+    }
+
+    .step-desc code {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      background: rgba(0,255,157,0.08);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* ── Status indicator ── */
+    .state-indicator {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+    }
+
+    .state-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .state-label { color: var(--dim); letter-spacing: 1px; font-size: 10px; }
+
+    .state-value {
+      color: var(--accent2);
+      letter-spacing: 1px;
+    }
+
+    .state-value.warn { color: var(--warn); }
+
+    /* ── Simulate button ── */
+    .sim-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 10px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.25s;
+      box-shadow: 0 0 10px rgba(0,212,255,0.1);
+    }
+
+    .sim-btn:hover {
+      background: rgba(0,212,255,0.1);
+      box-shadow: var(--glow);
+    }
+
+    .sim-btn.active {
+      background: rgba(255,107,53,0.1);
+      border-color: var(--warn);
+      color: var(--warn);
+      box-shadow: 0 0 10px rgba(255,107,53,0.2);
+    }
+
+    /* ── Code block ── */
+    .code-panel {
+      background: #060a0e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .code-header {
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--dim);
+      text-transform: uppercase;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn.copied { border-color: var(--accent2); color: var(--accent2); }
+
+    pre {
+      padding: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #7a9ab5;
+      overflow-x: auto;
+    }
+
+    .kw { color: #569cd6; }
+    .fn { color: #dcdcaa; }
+    .str { color: #ce9178; }
+    .cm { color: #3d5a6e; }
+    .ev { color: var(--accent2); }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 2px;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .logo-text { font-size: 16px; }
+      .status-bar { display: none; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .state-indicator { flex-wrap: wrap; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">TESLA <span>VIDEO</span></div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span>DRIVE MODE BYPASS</span>
+      <span id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- Drive mode banner -->
+  <div id="drive-banner">
+    ⚡ MODO CONDUÇÃO SIMULADO — BYPASS ATIVO — VÍDEO CONTINUA
+  </div>
+
+  <!-- Status Bar -->
+  <div class="state-indicator">
+    <div class="state-item">
+      <span class="state-label">VISIBILIDADE</span>
+      <span class="state-value" id="vis-state">VISIBLE</span>
+    </div>
+    <div class="state-item">
+      <span class="state-label">AUDIO CTX</span>
+      <span class="state-value" id="audio-state">INATIVO</span>
+    </div>
+    <div class="state-item">
+      <span class="state-label">WAKE LOCK</span>
+      <span class="state-value" id="wake-state">INATIVO</span>
+    </div>
+    <div class="state-item">
+      <span class="state-label">MODO</span>
+      <span class="state-value" id="drive-state">PARKED</span>
+    </div>
+    <div style="margin-left:auto">
+      <button class="sim-btn" id="sim-btn" onclick="toggleSimulate()">
+        ▶ Simular Condução
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('youtube', this)">▶ YouTube</button>
+    <button class="tab-btn" onclick="switchTab('local', this)">⬆ Upload Local</button>
+    <button class="tab-btn" onclick="switchTab('code', this)">&lt;/&gt; Código</button>
+  </div>
+
+  <!-- Tab: YouTube -->
+  <div class="tab-panel active" id="tab-youtube">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title">YouTube — Embed Bypass</span>
+        <span class="player-badge">API ATIVA</span>
+      </div>
+      <div class="yt-wrapper">
+        <iframe
+          id="yt-iframe"
+          src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=0&rel=0&modestbranding=1&enablejsapi=1"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div class="video-controls-bar">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim)">
+          lofi hip hop radio — beats to relax/study
+        </span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent2)">
+          IFRAME MODE ✓
+        </span>
+      </div>
+    </div>
+
+    <div class="how-section">
+      <div class="how-title">Como funciona — YouTube</div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">// 01</div>
+          <div class="step-name">visibilitychange</div>
+          <div class="step-desc">Quando o Tesla entra em marcha, dispara <code>hidden</code>. O script interceta e força a retoma.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">// 02</div>
+          <div class="step-name">AudioContext</div>
+          <div class="step-desc">Mantém o pipeline de áudio ativo via <code>WebAudio API</code>, mesmo com o browser "escondido".</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">// 03</div>
+          <div class="step-name">Wake Lock</div>
+          <div class="step-desc">Impede o ecrã de adormecer com <code>navigator.wakeLock</code>, mantendo o contexto vivo.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">// 04</div>
+          <div class="step-name">postMessage</div>
+          <div class="step-desc">Para o iframe do YouTube, usa-se <code>YT.Player API</code> para forçar <code>playVideo()</code> remotamente.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Upload Local -->
+  <div class="tab-panel" id="tab-local">
+    <div class="player-card">
+      <div class="player-header">
+        <span class="player-title">Ficheiro Local — HTML5 Video</span>
+        <span class="player-badge">BYPASS ATIVO</span>
+      </div>
+
+      <div id="upload-area" onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <svg width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+        </svg>
+        <p>Arrasta um vídeo para aqui</p>
+        <span>ou clica para selecionar — MP4, WebM, MOV</span>
+      </div>
+
+      <input type="file" id="file-input" accept="video/*" onchange="loadLocalVideo(event)">
+
+      <div id="local-video-wrapper">
+        <video id="local-video" controls playsinline></video>
+        <div class="video-controls-bar">
+          <span class="file-name" id="file-name-display">—</span>
+          <button class="btn-reset" onclick="resetLocalVideo()">✕ Remover</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="how-section">
+      <div class="how-title">Como funciona — Vídeo Local</div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">// 01</div>
+          <div class="step-name">File API</div>
+          <div class="step-desc">O ficheiro é carregado via <code>URL.createObjectURL()</code> — fica em memória, sem upload para servidor.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">// 02</div>
+          <div class="step-name">Pause Intercept</div>
+          <div class="step-desc">O evento <code>pause</code> é intercetado. Se não foi o utilizador, o vídeo retoma automaticamente.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">// 03</div>
+          <div class="step-name">AudioContext Bridge</div>
+          <div class="step-desc">O elemento <code>&lt;video&gt;</code> é ligado ao <code>AudioContext</code> para manter o contexto de áudio ativo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Código -->
+  <div class="tab-panel" id="tab-code">
+    <div class="code-panel">
+      <div class="code-header">
+        <span>tesla-bypass.js — Código completo</span>
+        <button class="copy-btn" id="copy-btn" onclick="copyCode()">COPIAR</button>
+      </div>
+      <pre id="code-block"><span class="cm">// ─────────────────────────────────────────────
+// Tesla Drive Mode Video Bypass
+// Funciona no browser Chromium embebido do Tesla
+// ─────────────────────────────────────────────</span>
+
+(<span class="kw">function</span> <span class="fn">TeslaBypass</span>() {
+  <span class="kw">const</span> video = document.<span class="fn">querySelector</span>(<span class="str">'video'</span>);
+  <span class="kw">let</span> audioCtx = <span class="kw">null</span>;
+  <span class="kw">let</span> wakeLock = <span class="kw">null</span>;
+  <span class="kw">let</span> userPaused = <span class="kw">false</span>;
+
+  <span class="cm">// 1. Iniciar AudioContext após interação</span>
+  <span class="kw">function</span> <span class="fn">initAudio</span>() {
+    <span class="kw">if</span> (audioCtx) <span class="kw">return</span>;
+    audioCtx = <span class="kw">new</span> (window.AudioContext || window.webkitAudioContext)();
+    <span class="kw">const</span> src = audioCtx.<span class="fn">createMediaElementSource</span>(video);
+    src.<span class="fn">connect</span>(audioCtx.destination);
+    <span class="fn">updateStatus</span>(<span class="str">'audio-state'</span>, <span class="str">'ATIVO'</span>);
+  }
+
+  document.<span class="fn">addEventListener</span>(<span class="str">'click'</span>, initAudio, { once: <span class="kw">true</span> });
+
+  <span class="cm">// 2. Wake Lock — mantém ecrã ativo</span>
+  <span class="kw">async function</span> <span class="fn">requestWakeLock</span>() {
+    <span class="kw">try</span> {
+      wakeLock = <span class="kw">await</span> navigator.wakeLock.<span class="fn">request</span>(<span class="str">'screen'</span>);
+      <span class="fn">updateStatus</span>(<span class="str">'wake-state'</span>, <span class="str">'ATIVO'</span>);
+    } <span class="kw">catch</span> (e) {
+      <span class="fn">updateStatus</span>(<span class="str">'wake-state'</span>, <span class="str">'N/D'</span>);
+    }
+  }
+  <span class="fn">requestWakeLock</span>();
+
+  <span class="cm">// 3. O truque principal — visibilitychange
+  // O Tesla dispara 'hidden' quando o carro entra em marcha</span>
+  document.<span class="fn">addEventListener</span>(<span class="ev">'visibilitychange'</span>, () => {
+    <span class="kw">const</span> state = document.visibilityState;
+    <span class="fn">updateStatus</span>(<span class="str">'vis-state'</span>, state.toUpperCase());
+
+    <span class="kw">if</span> (state === <span class="str">'hidden'</span>) {
+      <span class="cm">// Retoma áudio e vídeo</span>
+      <span class="kw">if</span> (audioCtx?.state === <span class="str">'suspended'</span>) audioCtx.<span class="fn">resume</span>();
+      video.<span class="fn">play</span>().<span class="fn">catch</span>(() => {});
+    } <span class="kw">else</span> {
+      <span class="cm">// Recupera wake lock quando visível de novo</span>
+      <span class="kw">if</span> (!wakeLock || wakeLock.released) <span class="fn">requestWakeLock</span>();
+    }
+  });
+
+  <span class="cm">// 4. Interceta pausa não intencional</span>
+  video.<span class="fn">addEventListener</span>(<span class="ev">'pause'</span>, () => {
+    <span class="kw">if</span> (!userPaused) {
+      <span class="fn">setTimeout</span>(() => video.<span class="fn">play</span>().<span class="fn">catch</span>(() => {}), 80);
+    }
+  });
+
+  <span class="cm">// Detectar pausa intencional do utilizador</span>
+  video.<span class="fn">addEventListener</span>(<span class="ev">'click'</span>, () => {
+    userPaused = video.paused ? <span class="kw">false</span> : <span class="kw">true</span>;
+  });
+
+})();</pre>
+    </div>
+  </div>
+
+  <footer>
+    <p>Tesla Video Bypass Demo — <a href="https://github.com" target="_blank">GitHub Pages</a></p>
+    <p style="margin-top:8px;font-size:10px;opacity:0.4">USE APENAS COMO PASSAGEIRO. NÃO CONDUZAS COM DISTRAÇÕES.</p>
+  </footer>
+
+</div>
+
+<script>
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toTimeString().slice(0, 8);
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── Tabs ──
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── Status helper ──
+  function updateStatus(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    el.className = 'state-value' + (val === 'HIDDEN' || val === 'DRIVING' ? ' warn' : '');
+  }
+
+  // ── Simulate Drive Mode ──
+  let simActive = false;
+  function toggleSimulate() {
+    simActive = !simActive;
+    const btn = document.getElementById('sim-btn');
+    const banner = document.getElementById('drive-banner');
+
+    if (simActive) {
+      btn.textContent = '■ Parar Simulação';
+      btn.classList.add('active');
+      banner.classList.add('active');
+      updateStatus('drive-state', 'DRIVING');
+      updateStatus('vis-state', 'HIDDEN (SIM)');
+      // Trigger the bypass logic manually
+      document.dispatchEvent(new Event('visibilitychange'));
+      // Also handle local video
+      const lv = document.getElementById('local-video');
+      if (lv && lv.src) { lv.play().catch(() => {}); }
+    } else {
+      btn.textContent = '▶ Simular Condução';
+      btn.classList.remove('active');
+      banner.classList.remove('active');
+      updateStatus('drive-state', 'PARKED');
+      updateStatus('vis-state', 'VISIBLE');
+    }
+  }
+
+  // ── Local Video ──
+  let userPaused = false;
+  let audioCtx = null;
+
+  function loadLocalVideo(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    _loadFile(file);
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    document.getElementById('upload-area').classList.remove('drag-over');
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) _loadFile(file);
+  }
+
+  function _loadFile(file) {
+    const video = document.getElementById('local-video');
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    document.getElementById('upload-area').style.display = 'none';
+    const wrapper = document.getElementById('local-video-wrapper');
+    wrapper.style.display = 'flex';
+    document.getElementById('file-name-display').textContent = file.name;
+
+    // Init bypass for local video
+    initVideoBypass(video);
+    video.play().catch(() => {});
+  }
+
+  function resetLocalVideo() {
+    const video = document.getElementById('local-video');
+    URL.revokeObjectURL(video.src);
+    video.src = '';
+    document.getElementById('local-video-wrapper').style.display = 'none';
+    document.getElementById('upload-area').style.display = 'flex';
+    document.getElementById('file-input').value = '';
+    audioCtx = null;
+    updateStatus('audio-state', 'INATIVO');
+  }
+
+  function initVideoBypass(video) {
+    // AudioContext
+    document.addEventListener('click', function initAC() {
+      if (audioCtx) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioCtx.createMediaElementSource(video);
+        src.connect(audioCtx.destination);
+        updateStatus('audio-state', 'ATIVO');
+      } catch(e) {}
+    }, { once: true });
+
+    // Wake Lock
+    requestWakeLock();
+
+    // visibilitychange bypass
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' || simActive) {
+        if (audioCtx?.state === 'suspended') audioCtx.resume();
+        video.play().catch(() => {});
+      } else {
+        requestWakeLock();
+      }
+    });
+
+    // Pause intercept
+    video.addEventListener('pause', () => {
+      if (!userPaused) setTimeout(() => video.play().catch(()=>{}), 80);
+    });
+
+    video.addEventListener('click', () => {
+      userPaused = video.paused ? false : true;
+    });
+  }
+
+  // Wake Lock
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      updateStatus('wake-state', 'ATIVO');
+    } catch(e) {
+      updateStatus('wake-state', 'N/D');
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    const state = document.visibilityState;
+    if (!simActive) updateStatus('vis-state', state.toUpperCase());
+    if (state === 'visible' && (!wakeLock || wakeLock.released)) requestWakeLock();
+  });
+  requestWakeLock();
+
+  // Copy code
+  function copyCode() {
+    const code = document.getElementById('code-block').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'COPIADO ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
