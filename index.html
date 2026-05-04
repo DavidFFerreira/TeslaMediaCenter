@@ -1,2137 +1,1299 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tesla Media Center</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tesla Media Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050608;
+  --surface: #0d0f12;
+  --surface2: #141720;
+  --border: #1e2330;
+  --accent: #e8232a;
+  --accent2: #ff4d4d;
+  --green: #00e676;
+  --amber: #ffab00;
+  --blue: #448aff;
+  --text: #e8eaf0;
+  --muted: #5a6070;
+  --font-display: 'Orbitron', monospace;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font-mono); overflow-x:hidden; }
 
-    :root {
-      --bg:       #05080d;
-      --surface:  #090d14;
-      --panel:    #0c1220;
-      --border:   #172030;
-      --accent:   #e8a800;
-      --accent2:  #ff6b00;
-      --blue:     #00b4d8;
-      --plex:     #e5a00d;
-      --text:     #c5d8e8;
-      --dim:      #3d5570;
-      --glow-y:   0 0 20px rgba(232,168,0,0.35);
-      --glow-b:   0 0 20px rgba(0,180,216,0.35);
-    }
+/* ── SCANLINE OVERLAY */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.06) 2px, rgba(0,0,0,.06) 4px);
+}
 
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Exo 2', sans-serif; overflow-x: hidden; }
+/* ── HEADER */
+header {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:14px 20px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.logo { font-family:var(--font-display); font-size:1rem; letter-spacing:.12em; color:var(--accent); font-weight:900; }
+.logo span { color:var(--text); }
 
-    /* scanlines */
-    body::before {
-      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9000;
-      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
-    }
+.status-bar { display:flex; gap:10px; flex-wrap:wrap; flex:1; justify-content:flex-end; }
+.badge {
+  font-size:.62rem; letter-spacing:.1em; padding:4px 10px;
+  border:1px solid var(--border); background:var(--surface2);
+  text-transform:uppercase; font-family:var(--font-display);
+}
+.badge.parked { border-color:var(--green); color:var(--green); }
+.badge.driving { border-color:var(--accent); color:var(--accent); animation:pulse .8s infinite; }
+.badge.active { border-color:var(--green); color:var(--green); }
+.badge.warn { border-color:var(--amber); color:var(--amber); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
-    /* grid */
-    body::after {
-      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background-image: linear-gradient(rgba(232,168,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(232,168,0,0.025) 1px, transparent 1px);
-      background-size: 48px 48px;
-    }
+/* ── TABS */
+.tabs { display:flex; border-bottom:1px solid var(--border); overflow-x:auto; background:var(--surface); }
+.tab-btn {
+  padding:12px 20px; font-family:var(--font-display); font-size:.6rem; letter-spacing:.15em;
+  background:none; border:none; color:var(--muted); cursor:pointer;
+  border-bottom:2px solid transparent; white-space:nowrap; text-transform:uppercase;
+  transition:color .2s, border-color .2s;
+}
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+.tab-btn:hover { color:var(--text); }
 
-    .container { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 20px 18px 60px; }
+/* ── PANELS */
+.tab-panel { display:none; padding:20px; }
+.tab-panel.active { display:block; }
 
-    /* ── HEADER ── */
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
-    }
+/* ── VIDEO WRAPPER */
+.video-wrapper {
+  position:relative; background:#000;
+  border:1px solid var(--border); margin-bottom:16px; overflow:hidden;
+  aspect-ratio:16/9; max-height:60vh;
+}
+.video-wrapper video { width:100%; height:100%; display:block; }
+.bypass-badge {
+  position:absolute; top:10px; right:10px;
+  font-family:var(--font-display); font-size:.55rem; letter-spacing:.15em;
+  padding:4px 10px; background:rgba(0,230,118,.12); border:1px solid var(--green); color:var(--green);
+}
 
-    .logo { display: flex; align-items: center; gap: 14px; }
+/* ── YOUTUBE SECTION */
+.yt-warning {
+  background:rgba(255,171,0,.08); border:1px solid var(--amber);
+  padding:14px 16px; margin-bottom:14px; font-size:.78rem; line-height:1.6;
+  color:var(--amber);
+}
+.yt-warning strong { font-family:var(--font-display); font-size:.65rem; letter-spacing:.1em; display:block; margin-bottom:4px; }
+.yt-video-wrapper {
+  position:relative; background:#000;
+  border:1px solid var(--border); margin-bottom:16px; overflow:hidden;
+  aspect-ratio:16/9; max-height:60vh;
+}
+.yt-video-wrapper iframe { width:100%; height:100%; border:none; }
+.yt-fallback-video { width:100%; height:100%; display:block; }
+.yt-blocker { display:none; }
 
-    .logo-mark {
-      width: 46px; height: 46px; border-radius: 8px;
-      background: linear-gradient(135deg, #1a1000, #2a1a00);
-      border: 1px solid var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--glow-y);
-      animation: halo 4s ease-in-out infinite;
-    }
-    @keyframes halo {
-      0%,100% { box-shadow: var(--glow-y); }
-      50% { box-shadow: 0 0 35px rgba(232,168,0,0.55); }
-    }
-    .logo-mark svg { width: 26px; height: 26px; }
+/* ── CONTROLS / INPUTS */
+.input-group { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+input[type=text], input[type=password] {
+  flex:1; min-width:180px; padding:10px 14px;
+  background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  font-family:var(--font-mono); font-size:.8rem; outline:none;
+  transition:border-color .2s;
+}
+input:focus { border-color:var(--accent); }
+button.btn {
+  padding:10px 18px; background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-family:var(--font-display); font-size:.58rem; letter-spacing:.12em;
+  cursor:pointer; text-transform:uppercase; transition:all .2s; white-space:nowrap;
+}
+button.btn:hover { background:var(--accent); border-color:var(--accent); color:#fff; }
+button.btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+button.btn.green { border-color:var(--green); color:var(--green); }
+button.btn.green:hover { background:var(--green); color:#000; }
 
-    .logo-text { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 3px; color: #fff; text-transform: uppercase; line-height: 1.1; }
-    .logo-text small { display: block; font-size: 9px; font-weight: 400; color: var(--accent); letter-spacing: 5px; margin-top: 2px; }
+/* ── STATUS ROW */
+.status-row {
+  display:flex; gap:8px; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--border);
+  margin-top:8px;
+}
+.stat { font-size:.65rem; letter-spacing:.08em; }
+.stat .label { color:var(--muted); }
+.stat .val { color:var(--text); }
+.stat .val.ok { color:var(--green); }
+.stat .val.err { color:var(--accent); }
+.stat .val.warn { color:var(--amber); }
 
-    .hud { display: flex; gap: 24px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
-    .hud-item { display: flex; flex-direction: column; gap: 2px; }
-    .hud-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
-    .hud-value { color: var(--accent); }
-    .hud-value.ok { color: #00e676; }
-    .hud-value.warn { color: var(--accent2); }
+/* ── SECTION LABEL */
+.section-label {
+  font-family:var(--font-display); font-size:.6rem; letter-spacing:.2em;
+  color:var(--muted); text-transform:uppercase; margin-bottom:10px;
+}
 
-    /* ── DRIVE BANNER ── */
-    #drive-banner {
-      display: none; margin-bottom: 18px;
-      padding: 10px 20px; border-radius: 6px; text-align: center;
-      background: linear-gradient(90deg, rgba(255,107,0,0.12), rgba(232,168,0,0.08), rgba(255,107,0,0.12));
-      border: 1px solid rgba(255,107,0,0.4);
-      font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--accent2);
-      text-transform: uppercase; animation: pulse-bg 2s ease-in-out infinite;
-    }
-    @keyframes pulse-bg { 50% { background: linear-gradient(90deg, rgba(255,107,0,0.2), rgba(232,168,0,0.12), rgba(255,107,0,0.2)); } }
-    #drive-banner.show { display: block; }
+/* ── UPLOAD */
+.drop-zone {
+  border:2px dashed var(--border); padding:40px; text-align:center;
+  cursor:pointer; transition:border-color .2s; font-size:.8rem; color:var(--muted);
+}
+.drop-zone:hover, .drop-zone.drag { border-color:var(--accent); color:var(--text); }
+.drop-zone input { display:none; }
 
-    /* ── TABS ── */
-    .tabs {
-      display: flex; gap: 3px; margin-bottom: 22px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px;
-    }
-    .tab-btn {
-      flex: 1; padding: 11px 12px; background: transparent; border: none; border-radius: 7px;
-      color: var(--dim); font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
-      letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-    }
-    .tab-btn .tab-icon { font-size: 15px; }
-    .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
-    .tab-btn.active { background: rgba(232,168,0,0.12); color: var(--accent); box-shadow: 0 0 14px rgba(232,168,0,0.15); }
-    .tab-btn.plex-tab.active { background: rgba(229,160,13,0.15); color: var(--plex); box-shadow: 0 0 14px rgba(229,160,13,0.2); }
-    .tab-btn.iptv-tab.active { background: rgba(0,180,216,0.12); color: var(--blue); box-shadow: 0 0 14px rgba(0,180,216,0.2); }
+/* ── LIBRARY GRID */
+.lib-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:12px;
+}
+.lib-item {
+  background:var(--surface2); border:1px solid var(--border); padding:10px;
+  cursor:pointer; transition:border-color .2s; font-size:.72rem;
+}
+.lib-item:hover { border-color:var(--accent); }
+.lib-item .title { margin-top:6px; word-break:break-word; }
+.lib-thumb { width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; }
+.lib-thumb img { width:100%; height:100%; object-fit:cover; }
 
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+/* ── IPTV */
+.iptv-list { max-height:300px; overflow-y:auto; border:1px solid var(--border); }
+.iptv-item {
+  display:flex; align-items:center; gap:10px; padding:8px 12px;
+  border-bottom:1px solid var(--border); cursor:pointer; font-size:.75rem;
+  transition:background .15s;
+}
+.iptv-item:hover { background:var(--surface2); }
+.iptv-item.active { background:rgba(232,35,42,.1); border-left:2px solid var(--accent); }
+.iptv-item img { width:32px; height:20px; object-fit:contain; background:#000; }
 
-    /* ── STATUS ROW ── */
-    .status-row {
-      display: flex; align-items: center; gap: 0; margin-bottom: 22px;
-      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
-    }
-    .status-cell {
-      flex: 1; padding: 12px 16px; border-right: 1px solid var(--border);
-      font-family: 'Share Tech Mono', monospace;
-    }
-    .status-cell:last-child { border-right: none; flex: 0 0 auto; padding: 10px 16px; }
-    .s-label { font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 3px; }
-    .s-val { font-size: 12px; color: #00e676; }
-    .s-val.off { color: var(--dim); }
-    .s-val.warn { color: var(--accent2); }
+/* ── PLEX / JELLYFIN CONNECT */
+.connect-card {
+  border:1px solid var(--border); background:var(--surface); padding:20px; margin-bottom:16px;
+}
+.connect-title { font-family:var(--font-display); font-size:.7rem; letter-spacing:.15em; margin-bottom:14px; }
+.or-sep { text-align:center; color:var(--muted); font-size:.7rem; margin:10px 0; }
+.pin-display {
+  font-family:var(--font-display); font-size:2rem; letter-spacing:.4em; text-align:center;
+  color:var(--accent); padding:16px; border:1px solid var(--border); margin:10px 0;
+}
+.error-msg { color:var(--accent); font-size:.75rem; margin-top:8px; display:none; }
 
-    .sim-btn {
-      background: transparent; border: 1px solid var(--accent); color: var(--accent);
-      font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px;
-      padding: 8px 18px; border-radius: 6px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; white-space: nowrap;
-    }
-    .sim-btn:hover { background: rgba(232,168,0,0.1); box-shadow: var(--glow-y); }
-    .sim-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,0,0.1); }
+/* ── BYPASS INFO */
+.bypass-info {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:16px;
+}
+.info-card {
+  border:1px solid var(--border); padding:14px;
+  background:var(--surface);
+}
+.info-card .num { font-family:var(--font-display); font-size:.6rem; color:var(--muted); margin-bottom:4px; }
+.info-card .title { font-family:var(--font-display); font-size:.7rem; color:var(--accent); margin-bottom:6px; }
+.info-card p { font-size:.72rem; line-height:1.6; color:var(--muted); }
 
-    /* ── PLAYER CARD ── */
-    .player-card {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-      overflow: hidden; margin-bottom: 20px; box-shadow: 0 8px 48px rgba(0,0,0,0.6);
-    }
-    .player-header {
-      padding: 13px 18px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(255,255,255,0.02);
-    }
-    .player-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); }
-    .badge {
-      font-family: 'Share Tech Mono', monospace; font-size: 9px; padding: 3px 10px;
-      border-radius: 20px; letter-spacing: 1px; border: 1px solid currentColor;
-    }
-    .badge.green { color: #00e676; border-color: #00e676; }
-    .badge.orange { color: var(--accent); border-color: var(--accent); }
-    .badge.plex { color: var(--plex); border-color: var(--plex); }
+/* ── DONATION */
+.donation-bar {
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:16px 20px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap; justify-content:center;
+  text-align:center;
+}
+.coffee-icon { font-size:2rem; animation:steam 2s ease-in-out infinite; display:inline-block; }
+@keyframes steam {
+  0%,100%{transform:translateY(0) rotate(-5deg)}
+  50%{transform:translateY(-4px) rotate(5deg)}
+}
+.donation-text { font-size:.78rem; color:var(--muted); line-height:1.5; }
+.donation-text strong { color:var(--text); font-family:var(--font-display); font-size:.65rem; letter-spacing:.1em; }
+.btn-coffee {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 20px; background:rgba(255,171,0,.1);
+  border:1px solid var(--amber); color:var(--amber);
+  font-family:var(--font-display); font-size:.6rem; letter-spacing:.12em;
+  text-decoration:none; transition:all .2s; text-transform:uppercase;
+}
+.btn-coffee:hover { background:var(--amber); color:#000; }
 
-    .yt-wrap { position: relative; padding-top: 56.25%; background: #000; }
-    .yt-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+/* ── FOOTER NOTE */
+.footer-note {
+  text-align:center; padding:10px; font-size:.65rem; color:var(--muted);
+  border-top:1px solid var(--border);
+}
 
-    .bar {
-      padding: 11px 18px; display: flex; align-items: center; justify-content: space-between;
-      background: rgba(0,0,0,0.35); border-top: 1px solid var(--border);
-      font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    }
-    .bar-left { color: var(--dim); }
-    .bar-right { color: #00e676; }
+/* ── CODE BLOCK */
+pre {
+  background:var(--surface); border:1px solid var(--border);
+  padding:16px; font-size:.72rem; overflow-x:auto; line-height:1.7;
+  color:#a8d8a8; font-family:var(--font-mono);
+}
+.copy-btn { margin-bottom:8px; }
 
-    /* ── UPLOAD ── */
-    #upload-zone {
-      margin: 18px; padding: 44px 20px; border: 2px dashed var(--border); border-radius: 10px;
-      display: flex; flex-direction: column; align-items: center; gap: 14px;
-      cursor: pointer; transition: all 0.3s; background: rgba(232,168,0,0.01);
-    }
-    #upload-zone:hover, #upload-zone.over {
-      border-color: var(--accent); background: rgba(232,168,0,0.05);
-    }
-    #upload-zone svg { opacity: 0.35; transition: opacity 0.3s; }
-    #upload-zone:hover svg { opacity: 0.7; }
-    #upload-zone p { font-size: 15px; color: var(--dim); letter-spacing: 1px; }
-    #upload-zone span { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); opacity: 0.5; }
-    #file-input { display: none; }
-
-    #local-wrap { display: none; flex-direction: column; }
-    #local-video { width: 100%; max-height: 460px; background: #000; }
-
-    .btn-sm {
-      background: transparent; border: 1px solid var(--border); color: var(--dim);
-      font-family: 'Exo 2', sans-serif; font-size: 11px; letter-spacing: 2px;
-      padding: 5px 14px; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
-    }
-    .btn-sm:hover { border-color: var(--accent2); color: var(--accent2); }
-    .fname { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--accent); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* ── PLEX ── */
-    #plex-connect {
-      padding: 48px 20px;
-      display: flex; flex-direction: column; align-items: center; gap: 20px;
-    }
-
-    .plex-logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-    .plex-logo-wrap svg { width: 48px; height: 48px; }
-    .plex-logo-text {
-      font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900;
-      color: var(--plex); letter-spacing: 2px;
-    }
-
-    .plex-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 460px; line-height: 1.6; letter-spacing: 0.5px; }
-
-    #server-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 420px; }
-
-    .field-group { display: flex; flex-direction: column; gap: 6px; }
-    .field-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); font-family: 'Share Tech Mono', monospace; }
-    .field-input {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px;
-      padding: 10px 14px; outline: none; transition: border-color 0.2s;
-    }
-    .field-input:focus { border-color: var(--plex); }
-    .field-input::placeholder { color: var(--dim); opacity: 0.5; }
-
-    .plex-btn {
-      background: linear-gradient(135deg, #cc8800, #e5a00d);
-      border: none; border-radius: 8px; color: #000;
-      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
-      letter-spacing: 2px; padding: 13px 28px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; box-shadow: 0 4px 20px rgba(229,160,13,0.3);
-    }
-    .plex-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(229,160,13,0.5); }
-    .plex-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .plex-pin-box {
-      display: none; flex-direction: column; align-items: center; gap: 16px;
-      padding: 28px; background: rgba(229,160,13,0.06); border: 1px solid rgba(229,160,13,0.2);
-      border-radius: 12px; width: 100%; max-width: 420px; text-align: center;
-    }
-    .plex-pin-box.show { display: flex; }
-    .pin-label { font-size: 11px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
-    .pin-code {
-      font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 900;
-      color: var(--plex); letter-spacing: 12px;
-      text-shadow: 0 0 20px rgba(229,160,13,0.5);
-    }
-    .pin-sub { font-size: 12px; color: var(--dim); line-height: 1.5; }
-    .pin-sub a { color: var(--plex); text-decoration: none; }
-    .pin-sub a:hover { text-decoration: underline; }
-    .pin-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--plex); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    #plex-error { display: none; color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; }
-    #plex-error.show { display: block; }
-
-    /* Plex library */
-    #plex-library { display: none; }
-    #plex-library.show { display: block; }
-
-    .lib-header {
-      padding: 13px 18px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(229,160,13,0.04);
-    }
-    .lib-server-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--plex); }
-
-    .lib-sections { display: flex; gap: 8px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
-    .section-btn {
-      background: transparent; border: 1px solid var(--border); color: var(--dim);
-      font-family: 'Exo 2', sans-serif; font-size: 12px; letter-spacing: 1px;
-      padding: 6px 14px; border-radius: 20px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
-    }
-    .section-btn.active { border-color: var(--plex); color: var(--plex); background: rgba(229,160,13,0.08); }
-    .section-btn:hover:not(.active) { border-color: var(--dim); color: var(--text); }
-
-    .media-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;
-      padding: 16px 18px; max-height: 380px; overflow-y: auto;
-    }
-    .media-grid::-webkit-scrollbar { width: 4px; }
-    .media-grid::-webkit-scrollbar-track { background: transparent; }
-    .media-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .media-item {
-      cursor: pointer; border-radius: 8px; overflow: hidden;
-      background: var(--surface); border: 1px solid var(--border);
-      transition: all 0.2s; display: flex; flex-direction: column;
-    }
-    .media-item:hover { border-color: var(--plex); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-
-    .media-thumb {
-      width: 100%; aspect-ratio: 2/3; object-fit: cover; background: var(--panel);
-      display: flex; align-items: center; justify-content: center; font-size: 32px;
-    }
-    .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .media-thumb.no-img { font-size: 28px; min-height: 120px; }
-
-    .media-title { padding: 8px; font-size: 11px; color: var(--text); line-height: 1.3; letter-spacing: 0.3px; }
-    .media-year { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); padding: 0 8px 8px; }
-
-    .lib-loading {
-      padding: 48px; text-align: center; font-family: 'Share Tech Mono', monospace;
-      font-size: 12px; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 14px;
-    }
-
-    /* Plex player */
-    #plex-player-wrap {
-      display: none; flex-direction: column;
-    }
-    #plex-player-wrap.show { display: flex; }
-    #plex-video { width: 100%; max-height: 460px; background: #000; }
-
-    .plex-now-playing {
-      padding: 12px 18px; border-top: 1px solid var(--border);
-      background: rgba(229,160,13,0.04);
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .np-info { display: flex; flex-direction: column; gap: 3px; }
-    .np-title { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
-    .np-meta { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 1px; }
-    .np-actions { display: flex; gap: 8px; }
-
-    /* logout btn */
-    .btn-logout {
-      background: transparent; border: 1px solid var(--dim); color: var(--dim);
-      font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 1px;
-      padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
-    }
-    .btn-logout:hover { border-color: var(--accent2); color: var(--accent2); }
-
-    /* ── CARDS GRID ── */
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-
-    .info-card {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-      padding: 16px; position: relative; overflow: hidden; transition: border-color 0.2s;
-    }
-    .info-card::after {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, var(--accent), transparent); opacity: 0; transition: opacity 0.2s;
-    }
-    .info-card:hover { border-color: rgba(232,168,0,0.3); }
-    .info-card:hover::after { opacity: 1; }
-    .ic-num { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--accent); margin-bottom: 6px; letter-spacing: 2px; }
-    .ic-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 5px; }
-    .ic-desc { font-size: 12px; color: var(--dim); line-height: 1.5; }
-    .ic-desc code { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #00e676; background: rgba(0,230,118,0.08); padding: 1px 5px; border-radius: 2px; }
-
-    /* ── FOOTER ── */
-    footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 2px; line-height: 2; }
-    footer a { color: var(--accent); text-decoration: none; }
-
-    /* ── YOUTUBE SEARCH ── */
-    .yt-search-bar {
-      display: flex; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--border);
-      background: rgba(255,255,255,0.01);
-    }
-    .yt-search-input {
-      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px;
-      padding: 9px 14px; outline: none; transition: border-color 0.2s;
-    }
-    .yt-search-input:focus { border-color: var(--accent); }
-    .yt-search-input::placeholder { color: var(--dim); opacity: 0.5; }
-    .yt-search-btn {
-      background: rgba(232,168,0,0.12); border: 1px solid var(--accent); color: var(--accent);
-      font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px;
-      padding: 9px 18px; border-radius: 6px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; white-space: nowrap;
-    }
-    .yt-search-btn:hover { background: rgba(232,168,0,0.22); box-shadow: var(--glow-y); }
-    .yt-search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .yt-results {
-      display: none; max-height: 340px; overflow-y: auto;
-      border-bottom: 1px solid var(--border);
-    }
-    .yt-results.show { display: block; }
-    .yt-results::-webkit-scrollbar { width: 4px; }
-    .yt-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    .yt-result-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 18px; cursor: pointer; border-bottom: 1px solid rgba(23,32,48,0.5);
-      transition: background 0.15s;
-    }
-    .yt-result-item:hover { background: rgba(232,168,0,0.05); }
-    .yt-result-item.active { background: rgba(232,168,0,0.1); border-left: 2px solid var(--accent); }
-    .yt-result-thumb {
-      width: 96px; height: 54px; object-fit: cover; border-radius: 4px;
-      background: var(--surface); flex-shrink: 0;
-    }
-    .yt-result-info { flex: 1; min-width: 0; }
-    .yt-result-title { font-size: 13px; color: var(--text); line-height: 1.35; margin-bottom: 3px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .yt-result-channel { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
-    .yt-results-loading {
-      padding: 24px; text-align: center; font-family: 'Share Tech Mono', monospace;
-      font-size: 11px; color: var(--dim); display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    .yt-results-empty { padding: 20px 18px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
-
-    /* ── JELLYFIN ── */
-    #jellyfin-setup {
-      padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px;
-    }
-    .jelly-logo-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
-    .jelly-logo-icon {
-      width: 52px; height: 52px; border-radius: 10px;
-      background: linear-gradient(135deg, #0a0015, #15002a);
-      border: 1px solid #00a4dc;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 20px rgba(0,164,220,0.3);
-    }
-    .jelly-logo-text {
-      font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900;
-      background: linear-gradient(135deg, #00a4dc, #aa5cc3);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      letter-spacing: 3px;
-    }
-    .jelly-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 460px; line-height: 1.6; }
-    .jelly-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 420px; }
-    .jelly-field-input {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px;
-      padding: 10px 14px; outline: none; transition: border-color 0.2s; width: 100%;
-    }
-    .jelly-field-input:focus { border-color: #00a4dc; }
-    .jelly-field-input::placeholder { color: var(--dim); opacity: 0.5; }
-    .jelly-btn {
-      background: linear-gradient(135deg, #0077aa, #00a4dc);
-      border: none; border-radius: 8px; color: #fff;
-      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
-      letter-spacing: 2px; padding: 13px 28px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,164,220,0.3);
-    }
-    .jelly-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,164,220,0.5); }
-    .jelly-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .jelly-btn.secondary {
-      background: transparent; border: 1px solid #00a4dc; color: #00a4dc; box-shadow: none;
-    }
-    .jelly-btn.secondary:hover { background: rgba(0,164,220,0.08); }
-    #jellyfin-error { display: none; color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; }
-    #jellyfin-error.show { display: block; }
-
-    /* Jellyfin library */
-    #jellyfin-library { display: none; }
-    #jellyfin-library.show { display: block; }
-    .jelly-lib-header {
-      padding: 13px 18px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(0,164,220,0.04);
-    }
-    .jelly-server-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #00a4dc; }
-    .jelly-sections { display: flex; gap: 8px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
-    .jelly-section-btn {
-      background: transparent; border: 1px solid var(--border); color: var(--dim);
-      font-family: 'Exo 2', sans-serif; font-size: 12px; letter-spacing: 1px;
-      padding: 6px 14px; border-radius: 20px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
-    }
-    .jelly-section-btn.active { border-color: #00a4dc; color: #00a4dc; background: rgba(0,164,220,0.08); }
-    .jelly-section-btn:hover:not(.active) { border-color: var(--dim); color: var(--text); }
-    .jelly-media-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;
-      padding: 16px 18px; max-height: 380px; overflow-y: auto;
-    }
-    .jelly-media-grid::-webkit-scrollbar { width: 4px; }
-    .jelly-media-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    .jelly-media-item {
-      cursor: pointer; border-radius: 8px; overflow: hidden;
-      background: var(--surface); border: 1px solid var(--border);
-      transition: all 0.2s; display: flex; flex-direction: column;
-    }
-    .jelly-media-item:hover { border-color: #00a4dc; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-    .jelly-media-thumb {
-      width: 100%; aspect-ratio: 2/3; background: var(--panel);
-      display: flex; align-items: center; justify-content: center; font-size: 32px; overflow: hidden;
-    }
-    .jelly-media-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .jelly-media-title { padding: 8px; font-size: 11px; color: var(--text); line-height: 1.3; }
-    .jelly-media-year { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); padding: 0 8px 8px; }
-    .jelly-lib-loading {
-      padding: 48px; text-align: center; font-family: 'Share Tech Mono', monospace;
-      font-size: 12px; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 14px;
-    }
-    /* Jellyfin player */
-    #jellyfin-player-wrap { display: none; flex-direction: column; }
-    #jellyfin-player-wrap.show { display: flex; }
-    #jellyfin-video { width: 100%; max-height: 460px; background: #000; }
-    .jelly-now-playing {
-      padding: 12px 18px; border-top: 1px solid var(--border);
-      background: rgba(0,164,220,0.04);
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .badge.jelly { color: #00a4dc; border-color: #00a4dc; }
-    .tab-btn.jelly-tab.active { background: rgba(0,164,220,0.12); color: #00a4dc; box-shadow: 0 0 14px rgba(0,164,220,0.2); }
-
-    /* ── IPTV ── */
-    .iptv-setup {
-      padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px;
-    }
-    .iptv-logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-    .iptv-logo-icon {
-      width: 48px; height: 48px; border-radius: 8px;
-      background: linear-gradient(135deg, #000d1a, #001a33);
-      border: 1px solid var(--blue);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--glow-b); font-size: 24px;
-    }
-    .iptv-logo-text {
-      font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900;
-      color: var(--blue); letter-spacing: 4px;
-    }
-    .iptv-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 460px; line-height: 1.6; }
-    .iptv-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 480px; }
-    .iptv-btn {
-      background: linear-gradient(135deg, #0077aa, #00b4d8);
-      border: none; border-radius: 8px; color: #fff;
-      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
-      letter-spacing: 2px; padding: 13px 28px; cursor: pointer; text-transform: uppercase;
-      transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,180,216,0.3);
-    }
-    .iptv-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,180,216,0.5); }
-    .iptv-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .iptv-btn.secondary {
-      background: transparent; border: 1px solid var(--blue); color: var(--blue);
-      box-shadow: none;
-    }
-    .iptv-btn.secondary:hover { background: rgba(0,180,216,0.08); box-shadow: var(--glow-b); }
-    #iptv-error { display: none; color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; }
-    #iptv-error.show { display: block; }
-
-    /* IPTV Channel list */
-    #iptv-library { display: none; }
-    #iptv-library.show { display: block; }
-    .iptv-lib-header {
-      padding: 13px 18px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(0,180,216,0.04);
-    }
-    .iptv-lib-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--blue); }
-    .iptv-search-wrap { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
-    .iptv-filter-input {
-      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 12px;
-      padding: 7px 12px; outline: none; transition: border-color 0.2s;
-    }
-    .iptv-filter-input:focus { border-color: var(--blue); }
-    .iptv-filter-input::placeholder { color: var(--dim); opacity: 0.5; }
-    .iptv-group-tabs {
-      display: flex; gap: 6px; padding: 10px 18px; flex-wrap: wrap;
-      border-bottom: 1px solid var(--border); max-height: 90px; overflow-y: auto;
-    }
-    .iptv-group-btn {
-      background: transparent; border: 1px solid var(--border); color: var(--dim);
-      font-family: 'Exo 2', sans-serif; font-size: 11px; letter-spacing: 0.5px;
-      padding: 4px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .iptv-group-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(0,180,216,0.08); }
-    .iptv-group-btn:hover:not(.active) { border-color: var(--dim); color: var(--text); }
-    .iptv-channel-list {
-      max-height: 320px; overflow-y: auto;
-    }
-    .iptv-channel-list::-webkit-scrollbar { width: 4px; }
-    .iptv-channel-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    .iptv-channel-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 18px; cursor: pointer; border-bottom: 1px solid rgba(23,32,48,0.5);
-      transition: background 0.15s;
-    }
-    .iptv-channel-item:hover { background: rgba(0,180,216,0.05); }
-    .iptv-channel-item.active { background: rgba(0,180,216,0.1); border-left: 2px solid var(--blue); }
-    .iptv-ch-logo {
-      width: 40px; height: 40px; object-fit: contain; border-radius: 4px;
-      background: var(--surface); flex-shrink: 0; border: 1px solid var(--border);
-    }
-    .iptv-ch-logo-placeholder {
-      width: 40px; height: 40px; border-radius: 4px; background: var(--surface);
-      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
-      font-size: 16px; flex-shrink: 0;
-    }
-    .iptv-ch-info { flex: 1; min-width: 0; }
-    .iptv-ch-name { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .iptv-ch-group { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); margin-top: 2px; }
-    .iptv-ch-play { font-size: 18px; color: var(--dim); flex-shrink: 0; transition: color 0.15s; }
-    .iptv-channel-item:hover .iptv-ch-play { color: var(--blue); }
-    .iptv-lib-loading {
-      padding: 48px; text-align: center; font-family: 'Share Tech Mono', monospace;
-      font-size: 12px; color: var(--dim); display: flex; flex-direction: column; align-items: center; gap: 14px;
-    }
-
-    /* IPTV Player */
-    #iptv-player-wrap { display: none; flex-direction: column; }
-    #iptv-player-wrap.show { display: flex; }
-    #iptv-video { width: 100%; max-height: 460px; background: #000; }
-    .iptv-now-playing {
-      padding: 12px 18px; border-top: 1px solid var(--border);
-      background: rgba(0,180,216,0.04);
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .iptv-np-badge { font-family: 'Share Tech Mono', monospace; font-size: 9px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--blue); color: var(--blue); }
-    .iptv-no-channels { padding: 32px; text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--dim); }
-    .iptv-ch-count { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
-    .iptv-nav-btns { display: flex; gap: 6px; }
-
-    @media (max-width: 600px) {
-      .hud { display: none; }
-      .logo-text { font-size: 14px; }
-      .tab-btn { font-size: 11px; padding: 9px 8px; }
-      .tab-btn .tab-icon { display: none; }
-      .status-row { flex-wrap: wrap; }
-      .status-cell { min-width: 50%; }
-      .media-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-    }
-  </style>
+/* ── SIMULATE BTN */
+.sim-btn-wrap { margin-bottom:12px; }
+</style>
 </head>
 <body>
-<div class="container">
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 4L4 10l12 6 12-6-12-6z" fill="#e8a800"/>
-          <path d="M4 22l12 6 12-6" stroke="#e8a800" stroke-width="2" stroke-linecap="round"/>
-          <path d="M4 16l12 6 12-6" stroke="#e8a800" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-        </svg>
-      </div>
-      <div class="logo-text">
-        Tesla Media Center
-        <small>Drive Mode Bypass v2.0</small>
-      </div>
-    </div>
-    <div class="hud">
-      <div class="hud-item">
-        <span class="hud-label">Modo</span>
-        <span class="hud-value" id="hud-mode">PARKED</span>
-      </div>
-      <div class="hud-item">
-        <span class="hud-label">Bypass</span>
-        <span class="hud-value ok" id="hud-bypass">ATIVO</span>
-      </div>
-      <div class="hud-item">
-        <span class="hud-label">Hora</span>
-        <span class="hud-value" id="hud-clock">--:--</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- DRIVE BANNER -->
-  <div id="drive-banner">⚡ MODO CONDUÇÃO ATIVO — BYPASS FUNCIONANDO — VÍDEO CONTINUA</div>
-
-  <!-- STATUS ROW -->
-  <div class="status-row">
-    <div class="status-cell">
-      <div class="s-label">Visibilidade</div>
-      <div class="s-val" id="s-vis">VISIBLE</div>
-    </div>
-    <div class="status-cell">
-      <div class="s-label">AudioCtx</div>
-      <div class="s-val off" id="s-audio">INATIVO</div>
-    </div>
-    <div class="status-cell">
-      <div class="s-label">Wake Lock</div>
-      <div class="s-val off" id="s-wake">INATIVO</div>
-    </div>
-    <div class="status-cell">
-      <div class="s-label">Plex</div>
-      <div class="s-val off" id="s-plex">DESLIGADO</div>
-    </div>
-    <div class="status-cell">
-      <div class="s-label">Jellyfin</div>
-      <div class="s-val off" id="s-jelly">DESLIGADO</div>
-    </div>
-    <div class="status-cell">
-      <div class="s-label">IPTV</div>
-      <div class="s-val off" id="s-iptv">INATIVO</div>
-    </div>
-    <div class="status-cell">
-      <button class="sim-btn" id="sim-btn" onclick="toggleSim()">▶ Simular</button>
-    </div>
+<!-- ── HEADER ──────────────────────────────────── -->
+<header>
+  <div class="logo">TESLA<span> MEDIA CENTER</span> <span style="color:var(--muted);font-size:.55rem">v2.1</span></div>
+  <div class="status-bar">
+    <div class="badge parked" id="badge-mode">⬤ PARKED</div>
+    <div class="badge active" id="badge-bypass">BYPASS ATIVO</div>
+    <div id="badge-clock" class="badge" style="min-width:70px;text-align:center">--:--</div>
   </div>
+</header>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('yt', this)">
-      <span class="tab-icon">▶</span> YouTube
-    </button>
-    <button class="tab-btn" onclick="switchTab('local', this)">
-      <span class="tab-icon">⬆</span> Upload
-    </button>
-    <button class="tab-btn plex-tab" onclick="switchTab('plex', this)">
-      <span class="tab-icon">🎬</span> Plex
-    </button>
-    <button class="tab-btn jelly-tab" onclick="switchTab('jelly', this)">
-      <span class="tab-icon">🪼</span> Jellyfin
-    </button>
-    <button class="tab-btn iptv-tab" onclick="switchTab('iptv', this)">
-      <span class="tab-icon">📡</span> IPTV
-    </button>
-    <button class="tab-btn" onclick="switchTab('code', this)">
-      <span class="tab-icon">&lt;/&gt;</span> Código
-    </button>
-  </div>
-
-  <!-- ══ TAB: YOUTUBE ══ -->
-  <div class="tab-panel active" id="tab-yt">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title" id="yt-player-title">YouTube — Lofi Radio (demo)</span>
-        <span class="badge green">BYPASS ATIVO</span>
-      </div>
-      <!-- Search bar -->
-      <div class="yt-search-bar">
-        <input class="yt-search-input" type="text" id="yt-search-input"
-          placeholder="Pesquisar no YouTube... (ex: lofi, podcast, música)"
-          onkeydown="if(event.key==='Enter') ytSearch()">
-        <button class="yt-search-btn" id="yt-search-btn" onclick="ytSearch()">🔍 Pesquisar</button>
-      </div>
-      <!-- Results -->
-      <div class="yt-results" id="yt-results"></div>
-      <div class="yt-wrap">
-        <iframe id="yt-frame"
-          src="https://www.youtube.com/embed/jfKfPfyJRdk?rel=0&modestbranding=1&enablejsapi=1"
-          allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen>
-        </iframe>
-      </div>
-      <div class="bar">
-        <span class="bar-left" id="yt-bar-label">lofi hip hop radio — beats to relax/study</span>
-        <span class="bar-right">IFRAME ✓</span>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">visibilitychange</div><div class="ic-desc">Tesla dispara <code>hidden</code> ao entrar em marcha. O script interceta e força a retoma imediata.</div></div>
-      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">AudioContext</div><div class="ic-desc">Pipeline de áudio mantido ativo via <code>WebAudio API</code> mesmo com browser "escondido".</div></div>
-      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Wake Lock</div><div class="ic-desc">Impede o ecrã de adormecer com <code>navigator.wakeLock</code> durante a condução.</div></div>
-      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Pause Intercept</div><div class="ic-desc">Evento <code>pause</code> intercetado: se não foi o utilizador, o vídeo retoma em 80ms.</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TAB: UPLOAD ══ -->
-  <div class="tab-panel" id="tab-local">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title">Ficheiro Local — HTML5 Video</span>
-        <span class="badge orange">BYPASS ATIVO</span>
-      </div>
-      <!-- Tesla warning -->
-      <div style="margin:14px 18px 0;padding:12px 16px;background:rgba(255,107,0,0.07);border:1px solid rgba(255,107,0,0.3);border-radius:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent2);line-height:1.7">
-        ⚠ <strong>No Tesla esta aba não funciona.</strong> O browser do Tesla não tem acesso à pen USB nem ao sistema de ficheiros local.<br>
-        <span style="color:var(--dim)">Para reproduzir os teus ficheiros no carro usa <strong style="color:var(--plex)">Plex</strong> ou <strong style="color:#00a4dc">Jellyfin</strong> — servem os vídeos da tua biblioteca via rede. Esta aba só funciona no PC ou telemóvel.</span>
-      </div>
-      <div id="upload-zone"
-           onclick="document.getElementById('file-input').click()"
-           ondragover="event.preventDefault();this.classList.add('over')"
-           ondragleave="this.classList.remove('over')"
-           ondrop="dropFile(event)">
-        <svg width="52" height="52" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
-        </svg>
-        <p>Arrasta o teu vídeo aqui</p>
-        <span>MP4 · WebM · MOV · AVI — ficheiro fica local, não é enviado para nenhum servidor</span>
-      </div>
-      <input type="file" id="file-input" accept="video/*" onchange="loadFile(event)">
-      <div id="local-wrap">
-        <video id="local-video" controls playsinline></video>
-        <div class="bar">
-          <span class="fname" id="fname">—</span>
-          <button class="btn-sm" onclick="resetLocal()">✕ Remover</button>
-        </div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">File API</div><div class="ic-desc">Carregado via <code>createObjectURL()</code> — fica em memória, zero upload.</div></div>
-      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">AudioContext Bridge</div><div class="ic-desc">O <code>&lt;video&gt;</code> é ligado ao <code>AudioContext</code> para manter o pipeline de áudio ativo.</div></div>
-      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Pause Intercept</div><div class="ic-desc">Pausa involuntária intercetada e o vídeo retoma automaticamente em milissegundos.</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TAB: PLEX ══ -->
-  <div class="tab-panel" id="tab-plex">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title">Plex — Streaming com Drive Bypass</span>
-        <span class="badge plex" id="plex-badge">DESLIGADO</span>
-      </div>
-
-      <!-- Connect screen -->
-      <div id="plex-connect">
-        <div class="plex-logo-wrap">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="32" height="32" rx="4" fill="#1f1f1f"/>
-            <path d="M9 6h5.5l8.5 10-8.5 10H9l8.5-10L9 6z" fill="#e5a00d"/>
-          </svg>
-          <span class="plex-logo-text">PLEX</span>
-        </div>
-        <p class="plex-desc">Liga o teu Plex Media Server para aceder à tua biblioteca de filmes e séries com o bypass de condução ativo.</p>
-
-        <div id="server-form">
-          <div class="field-group">
-            <label class="field-label">Endereço do Servidor Plex</label>
-            <input class="field-input" type="text" id="plex-server-url"
-              placeholder="http://192.168.1.100:32400"
-              value="">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Token Plex (X-Plex-Token)</label>
-            <input class="field-input" type="password" id="plex-token"
-              placeholder="Cole aqui o teu token">
-          </div>
-          <button class="plex-btn" onclick="connectPlex()">Ligar ao Plex</button>
-          <div id="plex-error">⚠ Erro ao ligar. Verifica o URL e o token.</div>
-        </div>
-
-        <!-- PIN flow (fallback) -->
-        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);text-align:center">
-          — ou —
-        </div>
-        <button class="plex-btn" style="background:transparent;border:1px solid var(--plex);color:var(--plex);box-shadow:none;margin-top:4px" onclick="startPinAuth()">
-          Autenticar via plex.tv (PIN)
-        </button>
-
-        <div class="plex-pin-box" id="pin-box">
-          <div class="pin-label">Vai a plex.tv/link e introduz este código</div>
-          <div class="pin-code" id="pin-display">——</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="pin-spinner" id="pin-spinner"></div>
-            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim)">A aguardar confirmação...</span>
-          </div>
-          <div class="pin-sub">
-            Abre <a href="https://plex.tv/link" target="_blank">plex.tv/link</a> no teu telemóvel ou PC<br>
-            e introduz o código acima para autorizar.
-          </div>
-          <button class="btn-sm" onclick="cancelPin()">Cancelar</button>
-        </div>
-
-        <div style="margin-top:16px;max-width:420px;background:rgba(229,160,13,0.05);border:1px solid rgba(229,160,13,0.15);border-radius:8px;padding:14px 16px">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--plex);letter-spacing:2px;margin-bottom:8px">COMO OBTER O TOKEN</div>
-          <ol style="font-size:12px;color:var(--dim);line-height:1.8;padding-left:18px">
-            <li>Abre <strong style="color:var(--text)">app.plex.tv</strong> no browser</li>
-            <li>Clica com o botão direito num filme → <em>Ver XML</em></li>
-            <li>No URL da nova tab, copia o valor de <code style="color:var(--plex);font-family:'Share Tech Mono',monospace;font-size:10px">X-Plex-Token=...</code></li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- Library -->
-      <div id="plex-library">
-        <div class="lib-header">
-          <span class="lib-server-name" id="lib-server-name">🎬 A carregar...</span>
-          <div style="display:flex;gap:8px">
-            <button class="btn-sm" onclick="refreshLibrary()">↺ Atualizar</button>
-            <button class="btn-logout" onclick="plexLogout()">Desligar</button>
-          </div>
-        </div>
-        <div class="lib-sections" id="lib-sections"></div>
-        <div id="lib-content"></div>
-      </div>
-
-      <!-- Player -->
-      <div id="plex-player-wrap">
-        <video id="plex-video" controls playsinline></video>
-        <div class="plex-now-playing">
-          <div class="np-info">
-            <div class="np-title" id="np-title">—</div>
-            <div class="np-meta" id="np-meta">—</div>
-          </div>
-          <div class="np-actions">
-            <button class="btn-sm" onclick="closePlexPlayer()">↩ Biblioteca</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="cards">
-      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">Plex API</div><div class="ic-desc">Usa a <code>Plex HTTP API</code> para listar a biblioteca e obter o stream direto com o token.</div></div>
-      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Direct Play</div><div class="ic-desc">Usa <code>/video/:/transcode</code> ou direct play via <code>/library/parts</code> — sem plugin.</div></div>
-      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Wake Lock.</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TAB: JELLYFIN ══ -->
-  <div class="tab-panel" id="tab-jelly">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title">Jellyfin — Streaming com Drive Bypass</span>
-        <span class="badge jelly" id="jelly-badge">DESLIGADO</span>
-      </div>
-
-      <!-- Connect screen -->
-      <div id="jellyfin-setup">
-        <div class="jelly-logo-wrap">
-          <div class="jelly-logo-icon">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="url(#jg)"/>
-              <defs><linearGradient id="jg" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#00a4dc"/><stop offset="1" stop-color="#aa5cc3"/></linearGradient></defs>
-            </svg>
-          </div>
-          <span class="jelly-logo-text">JELLYFIN</span>
-        </div>
-        <p class="jelly-desc">Liga ao teu servidor Jellyfin para aceder à tua biblioteca de filmes e séries com o bypass de condução ativo. Gratuito e open-source, sem conta obrigatória.</p>
-
-        <div class="jelly-form">
-          <div class="field-group">
-            <label class="field-label">Endereço do Servidor Jellyfin</label>
-            <input class="jelly-field-input" type="text" id="jelly-server-url"
-              placeholder="http://192.168.1.100:8096">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Utilizador</label>
-            <input class="jelly-field-input" type="text" id="jelly-username"
-              placeholder="O teu utilizador Jellyfin"
-              onkeydown="if(event.key==='Enter') document.getElementById('jelly-password').focus()">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Palavra-passe</label>
-            <input class="jelly-field-input" type="password" id="jelly-password"
-              placeholder="A tua palavra-passe"
-              onkeydown="if(event.key==='Enter') connectJellyfin()">
-          </div>
-          <button class="jelly-btn" id="jelly-connect-btn" onclick="connectJellyfin()">🪼 Ligar ao Jellyfin</button>
-          <div id="jellyfin-error"></div>
-        </div>
-
-        <div style="margin-top:8px;max-width:420px;background:rgba(0,164,220,0.05);border:1px solid rgba(0,164,220,0.15);border-radius:8px;padding:14px 16px">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#00a4dc;letter-spacing:2px;margin-bottom:8px">COMO INSTALAR O JELLYFIN</div>
-          <ol style="font-size:12px;color:var(--dim);line-height:1.9;padding-left:18px">
-            <li>Descarrega o <a href="https://jellyfin.org/downloads" target="_blank" style="color:#00a4dc;text-decoration:none">Jellyfin Server</a> para Windows/Mac/Linux/NAS</li>
-            <li>Instala e abre <code style="color:#00a4dc;font-family:'Share Tech Mono',monospace;font-size:10px">http://localhost:8096</code> para configurar</li>
-            <li>Adiciona a tua pasta de filmes/séries como biblioteca</li>
-            <li>Para acesso fora de casa, configura o <em>Remote Access</em> nas definições</li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- Library -->
-      <div id="jellyfin-library">
-        <div class="jelly-lib-header">
-          <span class="jelly-server-name" id="jelly-server-name">🪼 A carregar...</span>
-          <div style="display:flex;gap:8px">
-            <button class="btn-sm" onclick="jellyRefresh()">↺ Atualizar</button>
-            <button class="btn-logout" onclick="jellyLogout()">Desligar</button>
-          </div>
-        </div>
-        <div class="jelly-sections" id="jelly-sections"></div>
-        <div id="jelly-lib-content"></div>
-      </div>
-
-      <!-- Player -->
-      <div id="jellyfin-player-wrap">
-        <video id="jellyfin-video" controls playsinline></video>
-        <div class="jelly-now-playing">
-          <div class="np-info">
-            <div class="np-title" id="jelly-np-title">—</div>
-            <div class="np-meta" id="jelly-np-meta">—</div>
-          </div>
-          <div class="np-actions">
-            <button class="btn-sm" onclick="closeJellyPlayer()">↩ Biblioteca</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="cards">
-      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">Jellyfin API</div><div class="ic-desc">Usa a <code>Jellyfin REST API</code> com autenticação por token — sem plugins nem middleware.</div></div>
-      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">Open-Source</div><div class="ic-desc">100% gratuito, sem conta obrigatória, sem limites. Corre no teu servidor ou NAS em casa.</div></div>
-      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Direct Stream</div><div class="ic-desc">Usa <code>/Videos/{id}/stream</code> para direct play — sem transcodificação se o formato for compatível.</div></div>
-      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Wake Lock + Pause Intercept.</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TAB: IPTV ══ -->
-  <div class="tab-panel" id="tab-iptv">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title">IPTV — M3U Playlist com Drive Bypass</span>
-        <span class="badge" style="color:var(--blue);border-color:var(--blue)" id="iptv-badge">DESLIGADO</span>
-      </div>
-
-      <!-- Setup screen -->
-      <div class="iptv-setup" id="iptv-setup">
-        <div class="iptv-logo-wrap">
-          <div class="iptv-logo-icon">📡</div>
-          <span class="iptv-logo-text">IPTV</span>
-        </div>
-        <p class="iptv-desc">Cola o URL de uma lista M3U para aceder aos teus canais IPTV com o bypass de condução ativo.</p>
-
-        <div class="iptv-form">
-          <div class="field-group">
-            <label class="field-label">URL da lista M3U</label>
-            <input class="field-input" type="text" id="iptv-m3u-url"
-              placeholder="http://servidor.com/lista.m3u ou .m3u8"
-              onkeydown="if(event.key==='Enter') loadM3U()">
-          </div>
-          <button class="iptv-btn" onclick="loadM3U()" id="iptv-load-btn">📡 Carregar Lista</button>
-          <div id="iptv-error"></div>
-        </div>
-
-        <div style="margin-top:8px;max-width:480px;background:rgba(0,180,216,0.04);border:1px solid rgba(0,180,216,0.15);border-radius:8px;padding:14px 16px">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:2px;margin-bottom:8px">FORMATOS SUPORTADOS</div>
-          <div style="font-size:12px;color:var(--dim);line-height:1.8">
-            ✓ Listas <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">.m3u</code> e <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">.m3u8</code><br>
-            ✓ Streams <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">HLS</code> e <code style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:10px">MP4/TS</code> diretos<br>
-            ✓ Grupos e logos incluídos na lista<br>
-            ⚠ O servidor IPTV precisa de suportar CORS (ou usar proxy)
-          </div>
-        </div>
-      </div>
-
-      <!-- Channel Library -->
-      <div id="iptv-library">
-        <div class="iptv-lib-header">
-          <span class="iptv-lib-name" id="iptv-lib-name">📡 Canais</span>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span class="iptv-ch-count" id="iptv-ch-count"></span>
-            <button class="btn-sm" onclick="iptvLogout()">✕ Desligar</button>
-          </div>
-        </div>
-        <div class="iptv-search-wrap">
-          <input class="iptv-filter-input" type="text" id="iptv-filter"
-            placeholder="🔍  Filtrar canais..."
-            oninput="filterIptvChannels(this.value)">
-        </div>
-        <div class="iptv-group-tabs" id="iptv-groups"></div>
-        <div id="iptv-channel-list-wrap"></div>
-      </div>
-
-      <!-- Player -->
-      <div id="iptv-player-wrap">
-        <video id="iptv-video" controls playsinline></video>
-        <div class="iptv-now-playing">
-          <div class="np-info">
-            <div class="np-title" id="iptv-np-title">—</div>
-            <div class="np-meta" id="iptv-np-group">—</div>
-          </div>
-          <div class="np-actions iptv-nav-btns">
-            <button class="btn-sm" onclick="iptvPrevChannel()" title="Canal anterior">◀ Anterior</button>
-            <button class="btn-sm" onclick="iptvNextChannel()" title="Próximo canal">Próximo ▶</button>
-            <button class="btn-sm" onclick="closeIptvPlayer()">↩ Lista</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="cards">
-      <div class="info-card"><div class="ic-num">// 01</div><div class="ic-title">M3U Parser</div><div class="ic-desc">Faz parse da lista <code>#EXTM3U</code> diretamente no browser — sem servidor, sem instalação.</div></div>
-      <div class="info-card"><div class="ic-num">// 02</div><div class="ic-title">HLS Native</div><div class="ic-desc">O Tesla Chromium suporta streams <code>HLS</code> nativamente via <code>&lt;video&gt;</code> — sem plugins.</div></div>
-      <div class="info-card"><div class="ic-num">// 03</div><div class="ic-title">Drive Bypass</div><div class="ic-desc">Mesmo bypass aplicado: <code>visibilitychange</code> + AudioContext + Pause Intercept.</div></div>
-      <div class="info-card"><div class="ic-num">// 04</div><div class="ic-title">Navegação</div><div class="ic-desc">Troca de canal com botões <code>Anterior/Próximo</code> sem sair do ecrã de reprodução.</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TAB: CÓDIGO ══ -->
-  <div class="tab-panel" id="tab-code">
-    <div class="player-card">
-      <div class="player-header">
-        <span class="player-title">tesla-bypass.js — Código Completo</span>
-        <button id="copy-btn" onclick="copyCode()" style="background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 12px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">COPIAR</button>
-      </div>
-      <pre id="code-block" style="padding:22px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.75;color:#7a9ab5;overflow-x:auto;background:#040608"><span style="color:#3d5570">// ─────────────────────────────────────────────────────
-// Tesla Drive Mode Video Bypass — tesla-bypass.js
-// Funciona no browser Chromium embebido do Tesla
-// ─────────────────────────────────────────────────────</span>
-
-(<span style="color:#569cd6">function</span> <span style="color:#dcdcaa">TeslaBypass</span>() {
-  <span style="color:#569cd6">const</span> video = document.<span style="color:#dcdcaa">querySelector</span>(<span style="color:#ce9178">'video'</span>);
-  <span style="color:#569cd6">let</span> audioCtx = <span style="color:#569cd6">null</span>;
-  <span style="color:#569cd6">let</span> wakeLock = <span style="color:#569cd6">null</span>;
-  <span style="color:#569cd6">let</span> userPaused = <span style="color:#569cd6">false</span>;
-
-  <span style="color:#3d5570">// ── 1. AudioContext — mantém pipeline de áudio ativo</span>
-  <span style="color:#569cd6">function</span> <span style="color:#dcdcaa">initAudio</span>() {
-    <span style="color:#569cd6">if</span> (audioCtx) <span style="color:#569cd6">return</span>;
-    audioCtx = <span style="color:#569cd6">new</span> (window.AudioContext || window.webkitAudioContext)();
-    <span style="color:#569cd6">const</span> src = audioCtx.<span style="color:#dcdcaa">createMediaElementSource</span>(video);
-    src.<span style="color:#dcdcaa">connect</span>(audioCtx.destination);
-  }
-  <span style="color:#3d5570">// Requer interação do utilizador para iniciar</span>
-  document.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#ce9178">'click'</span>, initAudio, { once: <span style="color:#569cd6">true</span> });
-
-  <span style="color:#3d5570">// ── 2. Wake Lock — impede o ecrã de adormecer</span>
-  <span style="color:#569cd6">async function</span> <span style="color:#dcdcaa">requestWakeLock</span>() {
-    <span style="color:#569cd6">try</span> {
-      wakeLock = <span style="color:#569cd6">await</span> navigator.wakeLock.<span style="color:#dcdcaa">request</span>(<span style="color:#ce9178">'screen'</span>);
-      wakeLock.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#ce9178">'release'</span>, () => {
-        <span style="color:#3d5570">// Recupera o wake lock quando possível</span>
-        <span style="color:#569cd6">if</span> (document.visibilityState === <span style="color:#ce9178">'visible'</span>) <span style="color:#dcdcaa">requestWakeLock</span>();
-      });
-    } <span style="color:#569cd6">catch</span> (e) { <span style="color:#3d5570">/* API não suportada */</span> }
-  }
-  <span style="color:#dcdcaa">requestWakeLock</span>();
-
-  <span style="color:#3d5570">// ── 3. O TRUQUE PRINCIPAL ─────────────────────────
-  // O Tesla dispara visibilitychange → 'hidden'
-  // quando o carro sai do lugar (entra em Drive/Reverse).
-  // O browser pausa automaticamente qualquer &lt;video&gt;.
-  // Intercetamos e forçamos a retoma imediata.</span>
-  document.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#00e676">'visibilitychange'</span>, () => {
-    <span style="color:#569cd6">if</span> (document.visibilityState === <span style="color:#ce9178">'hidden'</span>) {
-      <span style="color:#3d5570">// Retoma o AudioContext se suspenso</span>
-      <span style="color:#569cd6">if</span> (audioCtx?.state === <span style="color:#ce9178">'suspended'</span>) audioCtx.<span style="color:#dcdcaa">resume</span>();
-      <span style="color:#3d5570">// Força retoma do vídeo</span>
-      video.<span style="color:#dcdcaa">play</span>().<span style="color:#dcdcaa">catch</span>(() => {});
-    } <span style="color:#569cd6">else</span> {
-      <span style="color:#3d5570">// Recupera wake lock quando visível</span>
-      <span style="color:#569cd6">if</span> (!wakeLock || wakeLock.released) <span style="color:#dcdcaa">requestWakeLock</span>();
-    }
-  });
-
-  <span style="color:#3d5570">// ── 4. Interceta pausas involuntárias
-  // Além do visibilitychange, o Tesla pode tentar pausar
-  // o vídeo por outros meios. Este handler garante a retoma.</span>
-  video.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#00e676">'pause'</span>, () => {
-    <span style="color:#569cd6">if</span> (!userPaused) {
-      <span style="color:#dcdcaa">setTimeout</span>(() => video.<span style="color:#dcdcaa">play</span>().<span style="color:#dcdcaa">catch</span>(() => {}), 80);
-    }
-  });
-
-  <span style="color:#3d5570">// Distingue pausa do utilizador vs pausa do sistema</span>
-  video.<span style="color:#dcdcaa">addEventListener</span>(<span style="color:#00e676">'click'</span>, () => {
-    userPaused = video.paused ? <span style="color:#569cd6">false</span> : <span style="color:#569cd6">true</span>;
-  });
-
-  <span style="color:#3d5570">// ── 5. PLEX — fetch com token direto ao servidor</span>
-  <span style="color:#569cd6">async function</span> <span style="color:#dcdcaa">plexFetch</span>(serverUrl, token, path) {
-    <span style="color:#569cd6">const</span> url = <span style="color:#ce9178">`${serverUrl}${path}?X-Plex-Token=${token}`</span>;
-    <span style="color:#569cd6">const</span> res = <span style="color:#569cd6">await</span> <span style="color:#dcdcaa">fetch</span>(url, {
-      headers: {
-        <span style="color:#ce9178">'Accept'</span>: <span style="color:#ce9178">'application/json'</span>,
-        <span style="color:#ce9178">'X-Plex-Token'</span>: token,
-        <span style="color:#ce9178">'X-Plex-Product'</span>: <span style="color:#ce9178">'Tesla Media Center'</span>,
-        <span style="color:#ce9178">'X-Plex-Device'</span>: <span style="color:#ce9178">'Tesla'</span>,
-      }
-    });
-    <span style="color:#569cd6">return</span> res.<span style="color:#dcdcaa">json</span>();
-  }
-
-  <span style="color:#3d5570">// Obter URL de stream direto de um item Plex</span>
-  <span style="color:#569cd6">async function</span> <span style="color:#dcdcaa">getPlexStream</span>(serverUrl, token, ratingKey) {
-    <span style="color:#569cd6">const</span> data = <span style="color:#569cd6">await</span> <span style="color:#dcdcaa">plexFetch</span>(serverUrl, token,
-      <span style="color:#ce9178">`/library/metadata/${ratingKey}`</span>);
-    <span style="color:#569cd6">const</span> part = data?.MediaContainer?.Metadata?.[<span style="color:#b5cea8">0</span>]?.Media?.[<span style="color:#b5cea8">0</span>]?.Part?.[<span style="color:#b5cea8">0</span>];
-    <span style="color:#569cd6">if</span> (!part?.key) <span style="color:#569cd6">throw new</span> Error(<span style="color:#ce9178">'Stream não encontrado'</span>);
-    <span style="color:#569cd6">return</span> <span style="color:#ce9178">`${serverUrl}${part.key}?X-Plex-Token=${token}`</span>;
-  }
-
-})();</pre>
-    </div>
-
-    <div class="cards" style="margin-top:16px">
-      <div class="info-card"><div class="ic-num">// resumo</div><div class="ic-title">Como Usar</div><div class="ic-desc">Inclui este script em qualquer página com um <code>&lt;video&gt;</code> para ativar o bypass no Tesla.</div></div>
-      <div class="info-card"><div class="ic-num">// plex</div><div class="ic-title">Plex Stream URL</div><div class="ic-desc">Usa <code>plexFetch()</code> para obter o URL direto do ficheiro e atribui ao <code>video.src</code>.</div></div>
-      <div class="info-card"><div class="ic-num">// compat</div><div class="ic-title">Compatibilidade</div><div class="ic-desc">Testado no Tesla Chromium. Funciona também em qualquer browser moderno com <code>visibilitychange</code>.</div></div>
-    </div>
-  </div>
-
-  <footer>
-    <p>Tesla Media Center — <a href="https://github.com/DavidFFerreira/TeslaMediaCenter" target="_blank">github.com/DavidFFerrreira/TeslaMediaCenter</a></p>
-    <p style="opacity:0.4;margin-top:4px">⚠ Usa apenas como passageiro. Conduz com atenção.</p>
-  </footer>
-
+<!-- ── TABS ────────────────────────────────────── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('yt')">▶ YouTube</button>
+  <button class="tab-btn" onclick="showTab('upload')">⬆ Upload</button>
+  <button class="tab-btn" onclick="showTab('plex')">🎬 Plex</button>
+  <button class="tab-btn" onclick="showTab('jf')">🪼 Jellyfin</button>
+  <button class="tab-btn" onclick="showTab('iptv')">📡 IPTV</button>
+  <button class="tab-btn" onclick="showTab('code')"></> Código</button>
 </div>
 
-<script>
-// ── Copy Code ──
-function copyCode() {
-  const text = document.getElementById('code-block').innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = 'COPIADO ✓';
-    btn.style.borderColor = 'var(--accent)';
-    btn.style.color = 'var(--accent)';
-    setTimeout(() => {
-      btn.textContent = 'COPIAR';
-      btn.style.borderColor = 'var(--border)';
-      btn.style.color = 'var(--dim)';
-    }, 2000);
+<!-- ══════════════════════════════════════════════
+     TAB: YOUTUBE
+     PROBLEMA: iframes cross-origin não podem ser
+     controlados pelo script. SOLUÇÃO: usar a API
+     YouTube IFrame Player API com postMessage.
+══════════════════════════════════════════════ -->
+<div id="tab-yt" class="tab-panel active">
+
+  <div class="yt-warning">
+    <strong>⚠ NOTA YOUTUBE — LEIA ANTES DE USAR</strong>
+    O YouTube usa iframes cross-origin. O bypass usa a <strong>YouTube IFrame Player API</strong>
+    via <code>postMessage</code> para manter controlo mesmo quando o browser entra em modo condução.
+    Cola um URL ou ID de vídeo do YouTube abaixo.
+  </div>
+
+  <div class="input-group">
+    <input type="text" id="yt-url" placeholder="URL ou ID do YouTube (ex: dQw4w9WgXcQ)" />
+    <button class="btn primary" onclick="loadYT()">▶ Carregar</button>
+  </div>
+
+  <div class="yt-video-wrapper" id="yt-container">
+    <div id="yt-player-div"></div>
+  </div>
+
+  <div class="sim-btn-wrap">
+    <button class="btn" onclick="simulateDriving()">▶ Simular Condução (PC/Teste)</button>
+  </div>
+
+  <div class="status-row">
+    <div class="stat"><span class="label">Visibilidade: </span><span class="val ok" id="st-vis">VISIBLE</span></div>
+    <div class="stat"><span class="label">AudioCtx: </span><span class="val" id="st-audio">INATIVO</span></div>
+    <div class="stat"><span class="label">Wake Lock: </span><span class="val" id="st-wake">INATIVO</span></div>
+    <div class="stat"><span class="label">YT API: </span><span class="val" id="st-ytapi">AGUARDA</span></div>
+  </div>
+
+  <div class="bypass-info">
+    <div class="info-card">
+      <div class="num">// 01</div>
+      <div class="title">YT IFrame API</div>
+      <p>A API oficial do YouTube expõe <code>playVideo()</code> via <code>postMessage</code>, contornando a barreira cross-origin.</p>
+    </div>
+    <div class="info-card">
+      <div class="num">// 02</div>
+      <div class="title">visibilitychange</div>
+      <p>Tesla dispara <code>hidden</code> ao entrar em marcha. O script força <code>playVideo()</code> imediatamente.</p>
+    </div>
+    <div class="info-card">
+      <div class="num">// 03</div>
+      <div class="title">Retry Loop</div>
+      <p>Se o player não responde ao primeiro play, tenta de novo a cada 200ms durante 3 segundos.</p>
+    </div>
+    <div class="info-card">
+      <div class="num">// 04</div>
+      <div class="title">Wake Lock</div>
+      <p>Impede o ecrã de adormecer com <code>navigator.wakeLock</code> durante a condução.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB: UPLOAD LOCAL
+══════════════════════════════════════════════ -->
+<div id="tab-upload" class="tab-panel">
+
+  <div class="yt-warning" style="border-color:var(--muted);color:var(--muted)">
+    <strong>⚠ ATENÇÃO</strong>
+    No Tesla esta aba não funciona — o browser não acede ao sistema de ficheiros.
+    Usa <strong>Plex</strong> ou <strong>Jellyfin</strong> para servir ficheiros locais.
+    Esta aba funciona no PC ou telemóvel.
+  </div>
+
+  <div class="video-wrapper">
+    <video id="local-video" controls></video>
+    <div class="bypass-badge">BYPASS ATIVO</div>
+  </div>
+
+  <div class="sim-btn-wrap">
+    <button class="btn" onclick="simulateDriving()">▶ Simular Condução</button>
+  </div>
+
+  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+       ondragover="event.preventDefault();this.classList.add('drag')"
+       ondragleave="this.classList.remove('drag')"
+       ondrop="handleDrop(event)">
+    <input type="file" id="file-input" accept="video/*" onchange="loadLocalFile(this)">
+    Arrasta o teu vídeo aqui<br>
+    <span style="font-size:.65rem;color:var(--muted)">MP4 · WebM · MOV · AVI — fica local, não é enviado para lado nenhum</span>
+  </div>
+
+  <div class="status-row" id="local-status" style="display:none">
+    <div class="stat" id="local-filename"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB: PLEX
+══════════════════════════════════════════════ -->
+<div id="tab-plex" class="tab-panel">
+
+  <div class="video-wrapper">
+    <video id="plex-video" controls></video>
+    <div class="bypass-badge">BYPASS ATIVO</div>
+  </div>
+
+  <div class="connect-card" id="plex-connect">
+    <div class="connect-title">LIGAR AO PLEX</div>
+    <div class="input-group">
+      <input type="text" id="plex-url" placeholder="URL do servidor (ex: http://192.168.1.100:32400)" />
+    </div>
+    <div class="input-group">
+      <input type="text" id="plex-token" placeholder="X-Plex-Token" />
+      <button class="btn primary" onclick="connectPlex()">Ligar</button>
+    </div>
+    <div class="error-msg" id="plex-err">⚠ Erro ao ligar. Verifica URL e token.</div>
+    <div class="or-sep">— ou —</div>
+    <button class="btn green" onclick="startPlexPin()">Autenticar via plex.tv (PIN)</button>
+    <div id="plex-pin-box" style="display:none;margin-top:12px">
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">Vai a plex.tv/link no telemóvel e introduz:</div>
+      <div class="pin-display" id="plex-pin-code">——</div>
+      <button class="btn" onclick="cancelPlexPin()">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="plex-lib" style="display:none">
+    <div class="section-label">Biblioteca</div>
+    <button class="btn" onclick="refreshPlex()" style="margin-bottom:10px">↺ Atualizar</button>
+    <button class="btn" onclick="disconnectPlex()" style="margin-bottom:10px">✕ Desligar</button>
+    <div class="lib-grid" id="plex-grid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB: JELLYFIN
+══════════════════════════════════════════════ -->
+<div id="tab-jf" class="tab-panel">
+
+  <div class="video-wrapper">
+    <video id="jf-video" controls></video>
+    <div class="bypass-badge">BYPASS ATIVO</div>
+  </div>
+
+  <div class="connect-card" id="jf-connect">
+    <div class="connect-title">LIGAR AO JELLYFIN</div>
+    <div class="input-group">
+      <input type="text" id="jf-url" placeholder="URL do servidor (ex: http://192.168.1.100:8096)" />
+    </div>
+    <div class="input-group">
+      <input type="text" id="jf-user" placeholder="Utilizador" />
+      <input type="password" id="jf-pass" placeholder="Palavra-passe" />
+      <button class="btn primary" onclick="connectJF()">Ligar</button>
+    </div>
+    <div class="error-msg" id="jf-err">⚠ Erro ao ligar. Verifica o URL e as credenciais.</div>
+  </div>
+
+  <div id="jf-lib" style="display:none">
+    <div class="section-label">Biblioteca</div>
+    <button class="btn" onclick="refreshJF()" style="margin-bottom:10px">↺ Atualizar</button>
+    <button class="btn" onclick="disconnectJF()" style="margin-bottom:10px">✕ Desligar</button>
+    <div class="lib-grid" id="jf-grid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB: IPTV
+══════════════════════════════════════════════ -->
+<div id="tab-iptv" class="tab-panel">
+
+  <div class="video-wrapper">
+    <video id="iptv-video" controls></video>
+    <div class="bypass-badge">BYPASS ATIVO</div>
+  </div>
+
+  <div class="input-group">
+    <input type="text" id="m3u-url" placeholder="URL da lista M3U" />
+    <button class="btn primary" onclick="loadM3U()">📡 Carregar Lista</button>
+    <button class="btn" onclick="clearIPTV()" style="display:none" id="iptv-clear-btn">✕ Desligar</button>
+  </div>
+
+  <div id="iptv-nav" style="display:none;margin-bottom:10px">
+    <button class="btn" onclick="iptvPrev()">◀ Anterior</button>
+    <button class="btn" onclick="iptvNext()">Próximo ▶</button>
+    <button class="btn" onclick="showIPTVList()">↩ Lista</button>
+  </div>
+
+  <div class="iptv-list" id="iptv-list" style="display:none"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB: CÓDIGO
+══════════════════════════════════════════════ -->
+<div id="tab-code" class="tab-panel">
+  <div class="section-label">tesla-bypass.js — Código Completo Corrigido v2.1</div>
+  <button class="btn copy-btn" onclick="copyCode()">COPIAR</button>
+  <pre id="code-block">
+// ─────────────────────────────────────────────────────────────────
+// Tesla Drive Mode Video Bypass v2.1 — tesla-bypass.js
+// CORREÇÕES v2.1:
+//   - YouTube: usa YouTube IFrame API (postMessage) em vez de
+//     tentar controlar o iframe diretamente (impossível cross-origin)
+//   - userPaused: lógica corrigida (antes estava invertida)
+//   - AudioContext: inicia na primeira interação com o vídeo,
+//     não num click genérico na página
+//   - Retry loop: se play() falha, tenta novamente em 200ms
+// ─────────────────────────────────────────────────────────────────
+
+(function TeslaBypass() {
+  'use strict';
+
+  // ── CONFIG
+  const RETRY_INTERVAL = 200; // ms entre tentativas de play
+  const RETRY_DURATION = 3000; // ms máximo de retry após visibilitychange
+
+  let audioCtx = null;
+  let wakeLock = null;
+  let userPaused = false;
+  let retryTimer = null;
+  let ytPlayer = null; // referência ao YouTube IFrame Player
+
+  // ── UTILS
+  function tryPlay(video) {
+    if (!video || userPaused) return;
+    video.play().catch(() => {});
+  }
+
+  function tryPlayYT() {
+    if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+      ytPlayer.playVideo();
+    }
+  }
+
+  // ── 1. AudioContext — pipeline de áudio ativo em background
+  //    CORREÇÃO: ligar ao vídeo específico na primeira interação
+  //    com esse elemento, não num click genérico.
+  function initAudio(video) {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaElementSource(video);
+      src.connect(audioCtx.destination);
+      updateUI();
+    } catch(e) { /* browser pode não suportar */ }
+  }
+
+  // ── 2. Wake Lock — impede ecrã de adormecer
+  async function requestWakeLock() {
+    try {
+      if (navigator.wakeLock) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          // Recupera quando a tab volta a ficar visível
+          if (document.visibilityState === 'visible') requestWakeLock();
+        });
+        updateUI();
+      }
+    } catch(e) { /* API não suportada no browser do Tesla mais antigo */ }
+  }
+  requestWakeLock();
+
+  // ── 3. O BYPASS PRINCIPAL ────────────────────────────────────
+  //    O Tesla Chromium dispara visibilitychange → 'hidden'
+  //    quando o carro entra em Drive ou Reverse.
+  //    O browser pausa automaticamente qualquer <video>.
+  //    Intercetamos e forçamos retoma.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+
+      // Retoma AudioContext se suspenso
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+
+      // Força play em todos os vídeos HTML5 da página
+      document.querySelectorAll('video').forEach(v => {
+        if (!v.paused || v.readyState >= 2) tryPlay(v);
+      });
+
+      // Força play no YouTube via IFrame API
+      tryPlayYT();
+
+      // Retry loop — o Tesla pode tentar pausar novamente
+      // nos primeiros segundos após entrar em marcha
+      clearInterval(retryTimer);
+      const deadline = Date.now() + RETRY_DURATION;
+      retryTimer = setInterval(() => {
+        if (Date.now() > deadline) { clearInterval(retryTimer); return; }
+        document.querySelectorAll('video').forEach(v => {
+          if (v.paused && !userPaused) tryPlay(v);
+        });
+        if (ytPlayer && !userPaused) tryPlayYT();
+      }, RETRY_INTERVAL);
+
+    } else {
+      clearInterval(retryTimer);
+      if (!wakeLock || wakeLock.released) requestWakeLock();
+    }
+    updateUI();
   });
+
+  // ── 4. Interceta pausas involuntárias em vídeos HTML5
+  //    CORREÇÃO: a lógica de userPaused estava invertida.
+  //    Registo de intenção ANTES do evento pause/play.
+  function attachVideoBypass(video) {
+    // Regista intenção de pausa/play antes do evento
+    video.addEventListener('mousedown', () => {
+      // Se está a tocar e o utilizador clicou → quer pausar
+      userPaused = !video.paused;
+    });
+
+    // Detecta pausa involuntária (não iniciada pelo utilizador)
+    video.addEventListener('pause', () => {
+      if (!userPaused) {
+        setTimeout(() => tryPlay(video), 80);
+      }
+    });
+
+    // Inicia AudioContext na primeira interação com o vídeo
+    video.addEventListener('play', () => {
+      initAudio(video);
+      userPaused = false;
+    }, { once: false });
+  }
+
+  // ── 5. YouTube IFrame Player API
+  //    CORREÇÃO: iframes cross-origin não podem ser controlados
+  //    com document.querySelector. A YouTube IFrame API expõe
+  //    métodos via postMessage, que funcionam mesmo cross-origin.
+  window.onYouTubeIframeAPIReady = function() {
+    // O caller (index.html) chama setupYTPlayer() com o elementId e videoId
+    window._ytAPIReady = true;
+  };
+
+  window.setupYTPlayer = function(elementId, videoId) {
+    ytPlayer = new YT.Player(elementId, {
+      videoId: videoId,
+      playerVars: {
+        autoplay: 1,
+        controls: 1,
+        rel: 0,
+        // enablejsapi=1 é obrigatório para a API funcionar
+        enablejsapi: 1,
+      },
+      events: {
+        onReady: (e) => e.target.playVideo(),
+        onStateChange: (e) => {
+          // YT.PlayerState.PAUSED = 2
+          if (e.data === 2 && !userPaused) {
+            setTimeout(() => ytPlayer.playVideo(), 80);
+          }
+        }
+      }
+    });
+  };
+
+  // Expõe para uso externo
+  window.TeslaBypass = {
+    attachVideoBypass,
+    tryPlay,
+    tryPlayYT,
+    setUserPaused: (v) => { userPaused = v; },
+    getYTPlayer: () => ytPlayer,
+  };
+
+  // ── 6. Liga bypass a todos os vídeos já presentes
+  document.querySelectorAll('video').forEach(attachVideoBypass);
+
+  // Observa novos vídeos adicionados dinamicamente
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(m => m.addedNodes.forEach(node => {
+      if (node.tagName === 'VIDEO') attachVideoBypass(node);
+      else if (node.querySelectorAll) {
+        node.querySelectorAll('video').forEach(attachVideoBypass);
+      }
+    }));
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // ── UI helpers (para o dashboard de status)
+  function updateUI() {
+    const stVis = document.getElementById('st-vis');
+    const stAudio = document.getElementById('st-audio');
+    const stWake = document.getElementById('st-wake');
+    if (stVis) {
+      const hidden = document.visibilityState === 'hidden';
+      stVis.textContent = hidden ? 'HIDDEN' : 'VISIBLE';
+      stVis.className = 'val ' + (hidden ? 'err' : 'ok');
+    }
+    if (stAudio) {
+      stAudio.textContent = audioCtx ? audioCtx.state.toUpperCase() : 'INATIVO';
+      stAudio.className = 'val ' + (audioCtx?.state === 'running' ? 'ok' : 'warn');
+    }
+    if (stWake) {
+      stWake.textContent = (wakeLock && !wakeLock.released) ? 'ATIVO' : 'INATIVO';
+      stWake.className = 'val ' + ((wakeLock && !wakeLock.released) ? 'ok' : 'warn');
+    }
+  }
+
+  setInterval(updateUI, 2000);
+  updateUI();
+
+})();
+</pre>
+
+  <div class="bypass-info" style="margin-top:20px">
+    <div class="info-card">
+      <div class="num">// BUG 1</div>
+      <div class="title" style="color:var(--amber)">YouTube iframe</div>
+      <p>O iframe do YouTube é cross-origin. <code>video.play()</code> num iframe não funciona. Corrigido com a YouTube IFrame API.</p>
+    </div>
+    <div class="info-card">
+      <div class="num">// BUG 2</div>
+      <div class="title" style="color:var(--amber)">userPaused invertido</div>
+      <p>A lógica original estava ao contrário — pausava quando devia tocar e vice-versa. Corrigido com registo de intenção antes do evento.</p>
+    </div>
+    <div class="info-card">
+      <div class="num">// BUG 3</div>
+      <div class="title" style="color:var(--amber)">AudioContext genérico</div>
+      <p>O AudioContext iniciava no primeiro click na página, não no vídeo. Corrigido para iniciar no evento <code>play</code> do elemento correto.</p>
+    </div>
+    <div class="info-card">
+      <div class="num">// FIX</div>
+      <div class="title" style="color:var(--green)">Retry Loop</div>
+      <p>Novo loop de retry que tenta play durante 3 segundos após o <code>visibilitychange</code>, cobrindo os casos em que o Tesla tenta pausar múltiplas vezes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DONATION BAR
+══════════════════════════════════════════════ -->
+<div class="donation-bar">
+  <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+    <!-- Cup body -->
+    <rect x="10" y="22" width="28" height="22" rx="3" fill="#1a1a1a" stroke="#ffab00" stroke-width="1.5"/>
+    <!-- Cup handle -->
+    <path d="M38 28 Q46 28 46 34 Q46 40 38 40" stroke="#ffab00" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Saucer -->
+    <ellipse cx="24" cy="44" rx="18" ry="3" fill="#ffab00" opacity=".3"/>
+    <!-- Coffee surface -->
+    <ellipse cx="24" cy="24" rx="12" ry="3" fill="#6d3b1a"/>
+    <!-- Steam lines -->
+    <path d="M18 16 Q19 12 18 8" stroke="#ffab00" stroke-width="1.2" stroke-linecap="round" opacity=".7">
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="1.8s" repeatCount="indefinite"/>
+    </path>
+    <path d="M24 14 Q25 10 24 6" stroke="#ffab00" stroke-width="1.2" stroke-linecap="round" opacity=".5">
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,-4;0,0" dur="2.2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M30 16 Q31 12 30 8" stroke="#ffab00" stroke-width="1.2" stroke-linecap="round" opacity=".7">
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="1.5s" repeatCount="indefinite"/>
+    </path>
+    <!-- Tesla logo hint -->
+    <text x="17" y="36" font-family="monospace" font-size="7" fill="#ffab00" opacity=".6">☕</text>
+  </svg>
+
+  <div class="donation-text">
+    <strong>O BYPASS FUNCIONA. O CAFÉ NÃO SE FAZ SOZINHO.</strong><br>
+    Se este projeto te poupou horas de pesquisa (e a paciência de explicar ao Tesla que precisas de música),<br>
+    considera pagar-me um café. Prometo que não é para andar de Tesla — é para continuar a escrever código às 2h da manhã ☕
+  </div>
+
+  <a href="https://paypal.me/Davidfferreira1986?locale.x=pt_PT&country.x=PT" target="_blank" class="btn-coffee">
+    ☕ Pagar um Café
+  </a>
+</div>
+
+<div class="footer-note">
+  ⚠ Apenas para uso como passageiro. Conduz com atenção. &nbsp;|&nbsp;
+  <a href="https://github.com/DavidFFerreira/TeslaMediaCenter" style="color:var(--muted)">github.com/DavidFFerreira/TeslaMediaCenter</a>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════ -->
+
+<!-- YouTube IFrame API — carrega assincronamente -->
+<script>
+  // Injeta a API do YouTube de forma assíncrona
+  (function() {
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  })();
+</script>
+
+<script>
+// ─────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
 }
 
-// ════════════════════════════════════════
-// BYPASS ENGINE — aplica a todos os vídeos
-// ════════════════════════════════════════
-let audioCtx = null;
-let wakeLock = null;
-let simActive = false;
-let userPausedLocal = false;
-let userPausedPlex = false;
+// ─────────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('badge-clock').textContent = h + ':' + m;
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-function setStatus(id, val, cls) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = val;
-  el.className = 's-val' + (cls ? ' ' + cls : '');
+// ─────────────────────────────────────────────────
+// SIMULATE DRIVING
+// ─────────────────────────────────────────────────
+function simulateDriving() {
+  const badge = document.getElementById('badge-mode');
+  badge.textContent = '⬤ DRIVING';
+  badge.className = 'badge driving';
+
+  // Dispara o evento que o Tesla dispara quando entra em marcha
+  const evt = new Event('visibilitychange');
+  Object.defineProperty(document, 'visibilityState', {
+    value: 'hidden', configurable: true
+  });
+  document.dispatchEvent(evt);
+
+  setTimeout(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible', configurable: true
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    badge.textContent = '⬤ PARKED';
+    badge.className = 'badge parked';
+  }, 4000);
 }
 
-// Wake Lock
-async function grabWakeLock() {
+// ─────────────────────────────────────────────────
+// YOUTUBE — usando YouTube IFrame API
+// ─────────────────────────────────────────────────
+let ytReady = false;
+let ytPlayerObj = null;
+let ytUserPaused = false;
+
+// Callback da YouTube IFrame API
+window.onYouTubeIframeAPIReady = function() {
+  ytReady = true;
+  document.getElementById('st-ytapi').textContent = 'PRONTA';
+  document.getElementById('st-ytapi').className = 'val ok';
+};
+
+function loadYT() {
+  const input = document.getElementById('yt-url').value.trim();
+  if (!input) return;
+
+  // Extrai o ID do vídeo de vários formatos de URL
+  let videoId = input;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) { videoId = m[1]; break; }
+  }
+  if (videoId.length !== 11) {
+    // Assume que é um ID direto
+    videoId = videoId.substring(0, 11);
+  }
+
+  const container = document.getElementById('yt-container');
+  container.innerHTML = '<div id="yt-player-div"></div>';
+
+  if (!ytReady) {
+    // A API ainda não carregou — espera
+    const wait = setInterval(() => {
+      if (ytReady) { clearInterval(wait); createYTPlayer(videoId); }
+    }, 200);
+    return;
+  }
+  createYTPlayer(videoId);
+}
+
+function createYTPlayer(videoId) {
+  ytPlayerObj = new YT.Player('yt-player-div', {
+    width: '100%',
+    height: '100%',
+    videoId: videoId,
+    playerVars: {
+      autoplay: 1,
+      controls: 1,
+      rel: 0,
+      enablejsapi: 1,
+      origin: window.location.origin || 'https://davidfferreira.github.io',
+    },
+    events: {
+      onReady: function(e) {
+        e.target.playVideo();
+        // Expõe o player para o bypass global
+        window._ytPlayer = ytPlayerObj;
+      },
+      onStateChange: function(e) {
+        // YT.PlayerState: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
+        if (e.data === 2 && !ytUserPaused) {
+          // Pausa não iniciada pelo utilizador — retoma
+          setTimeout(() => { if (ytPlayerObj) ytPlayerObj.playVideo(); }, 80);
+        }
+        if (e.data === 1) ytUserPaused = false;
+      }
+    }
+  });
+
+  // Redimensiona o iframe para preencher o container
+  setTimeout(() => {
+    const iframe = document.querySelector('#yt-container iframe');
+    if (iframe) {
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.position = 'absolute';
+      iframe.style.top = '0';
+      iframe.style.left = '0';
+    }
+    document.getElementById('yt-container').style.position = 'relative';
+    document.getElementById('yt-container').style.paddingBottom = '56.25%';
+    document.getElementById('yt-container').style.height = '0';
+  }, 500);
+}
+
+// Regista intenção de pausa do utilizador no YouTube
+document.addEventListener('click', function(e) {
+  // Clique no iframe do YT — não conseguimos detectar diretamente,
+  // mas o onStateChange trata da lógica
+});
+
+// ─────────────────────────────────────────────────
+// UPLOAD LOCAL
+// ─────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) loadVideoFile(file);
+}
+
+function loadLocalFile(input) {
+  const file = input.files[0];
+  if (file) loadVideoFile(file);
+}
+
+function loadVideoFile(file) {
+  const video = document.getElementById('local-video');
+  const url = URL.createObjectURL(file);
+  video.src = url;
+  video.play().catch(() => {});
+  const status = document.getElementById('local-status');
+  const fname = document.getElementById('local-filename');
+  status.style.display = 'flex';
+  fname.innerHTML = '<span class="label">Ficheiro: </span><span class="val ok">' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)</span>';
+}
+
+// ─────────────────────────────────────────────────
+// PLEX
+// ─────────────────────────────────────────────────
+let plexConfig = { url: '', token: '' };
+let plexPinInterval = null;
+
+async function connectPlex() {
+  const url = document.getElementById('plex-url').value.trim().replace(/\/$/, '');
+  const token = document.getElementById('plex-token').value.trim();
+  if (!url || !token) return;
+
   try {
-    if (wakeLock && !wakeLock.released) return;
-    wakeLock = await navigator.wakeLock.request('screen');
-    setStatus('s-wake', 'ATIVO', '');
-    wakeLock.addEventListener('release', () => setStatus('s-wake', 'LIBERADO', 'warn'));
-  } catch (e) {
-    setStatus('s-wake', 'N/D', 'off');
+    const res = await fetch(`${url}/library/sections?X-Plex-Token=${token}`, {
+      headers: { 'Accept': 'application/json', 'X-Plex-Token': token }
+    });
+    if (!res.ok) throw new Error();
+    plexConfig = { url, token };
+    document.getElementById('plex-connect').style.display = 'none';
+    document.getElementById('plex-lib').style.display = 'block';
+    loadPlexLibrary();
+  } catch(e) {
+    document.getElementById('plex-err').style.display = 'block';
   }
 }
-grabWakeLock();
 
-// AudioContext init (precisa de interação)
-function ensureAudio(videoEl) {
-  if (audioCtx) return;
+async function loadPlexLibrary() {
+  const { url, token } = plexConfig;
   try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (videoEl) {
-      const src = audioCtx.createMediaElementSource(videoEl);
-      src.connect(audioCtx.destination);
+    const res = await fetch(`${url}/library/sections?X-Plex-Token=${token}`, { headers: { 'Accept': 'application/json' } });
+    const data = await res.json();
+    const sections = data.MediaContainer?.Directory || [];
+
+    const grid = document.getElementById('plex-grid');
+    grid.innerHTML = '';
+
+    for (const section of sections) {
+      if (!['movie','show'].includes(section.type)) continue;
+      const r2 = await fetch(`${url}/library/sections/${section.key}/all?X-Plex-Token=${token}`, { headers: { 'Accept': 'application/json' } });
+      const d2 = await r2.json();
+      const items = d2.MediaContainer?.Metadata || [];
+      items.slice(0, 20).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'lib-item';
+        const thumb = item.thumb ? `${url}${item.thumb}?X-Plex-Token=${token}` : '';
+        div.innerHTML = `<div class="lib-thumb">${thumb ? `<img src="${thumb}" onerror="this.style.display='none'">` : ''}</div><div class="title">${item.title}</div>`;
+        div.onclick = () => playPlexItem(item.ratingKey);
+        grid.appendChild(div);
+      });
     }
-    setStatus('s-audio', 'ATIVO', '');
   } catch(e) {}
 }
 
-// visibilitychange — o truque principal
-document.addEventListener('visibilitychange', () => {
-  const hidden = document.visibilityState === 'hidden';
-  if (!simActive) setStatus('s-vis', hidden ? 'HIDDEN' : 'VISIBLE', hidden ? 'warn' : '');
-
-  if (hidden || simActive) {
-    if (audioCtx?.state === 'suspended') audioCtx.resume();
-    resumeAllVideos();
-  } else {
-    grabWakeLock();
-  }
-});
-
-function resumeAllVideos() {
-  ['local-video','plex-video','jellyfin-video','iptv-video'].forEach(id => {
-    const v = document.getElementById(id);
-    if (v && v.src && !v.paused) return;
-    if (v && v.src) v.play().catch(()=>{});
-  });
-}
-
-function installBypass(videoEl, isPausedRef) {
-  videoEl.addEventListener('pause', () => {
-    if (!isPausedRef.value) setTimeout(() => videoEl.play().catch(()=>{}), 80);
-  });
-}
-
-// ── Simulate Drive ──
-function toggleSim() {
-  simActive = !simActive;
-  const btn = document.getElementById('sim-btn');
-  const banner = document.getElementById('drive-banner');
-  const hudMode = document.getElementById('hud-mode');
-
-  if (simActive) {
-    btn.textContent = '■ Parar';
-    btn.classList.add('active');
-    banner.classList.add('show');
-    hudMode.textContent = 'DRIVING';
-    hudMode.className = 'hud-value warn';
-    setStatus('s-vis', 'HIDDEN (SIM)', 'warn');
-    if (audioCtx?.state === 'suspended') audioCtx.resume();
-    resumeAllVideos();
-  } else {
-    btn.textContent = '▶ Simular';
-    btn.classList.remove('active');
-    banner.classList.remove('show');
-    hudMode.textContent = 'PARKED';
-    hudMode.className = 'hud-value';
-    setStatus('s-vis', 'VISIBLE', '');
-  }
-}
-
-// ── Clock ──
-setInterval(() => {
-  const t = new Date();
-  document.getElementById('hud-clock').textContent =
-    String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-}, 1000);
-document.getElementById('hud-clock').textContent = (() => {
-  const t = new Date();
-  return String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-})();
-
-// ── Tabs ──
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
-}
-
-// ════════════════════════════════════════
-// LOCAL VIDEO
-// ════════════════════════════════════════
-const localPaused = { value: false };
-
-function loadFile(e) {
-  const file = e.target.files[0];
-  if (file) _loadLocalFile(file);
-}
-function dropFile(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.remove('over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('video/')) _loadLocalFile(file);
-}
-function _loadLocalFile(file) {
-  const video = document.getElementById('local-video');
-  video.src = URL.createObjectURL(file);
-  document.getElementById('upload-zone').style.display = 'none';
-  const wrap = document.getElementById('local-wrap');
-  wrap.style.display = 'flex';
-  document.getElementById('fname').textContent = file.name;
-  installBypass(video, localPaused);
-  video.addEventListener('click', () => { localPaused.value = !video.paused; }, { once: false });
-  video.play().catch(()=>{});
-}
-function resetLocal() {
-  const video = document.getElementById('local-video');
-  URL.revokeObjectURL(video.src);
-  video.src = '';
-  document.getElementById('local-wrap').style.display = 'none';
-  document.getElementById('upload-zone').style.display = 'flex';
-  document.getElementById('file-input').value = '';
-}
-
-// ════════════════════════════════════════
-// PLEX INTEGRATION
-// ════════════════════════════════════════
-let plexToken = '';
-let plexServerUrl = '';
-let plexSections = [];
-let pinPollInterval = null;
-const plexPaused = { value: false };
-
-const CLIENT_ID = 'tesla-media-center-' + Math.random().toString(36).slice(2);
-
-function connectPlex() {
-  const url = document.getElementById('plex-server-url').value.trim().replace(/\/$/, '');
-  const token = document.getElementById('plex-token').value.trim();
-  if (!url || !token) { showPlexError('Preenche o URL do servidor e o token.'); return; }
-  plexServerUrl = url;
-  plexToken = token;
-  fetchPlexLibrary();
-}
-
-function showPlexError(msg) {
-  const el = document.getElementById('plex-error');
-  el.textContent = '⚠ ' + msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 4000);
-}
-
-async function fetchPlexLibrary() {
-  document.getElementById('plex-connect').style.display = 'none';
-  document.getElementById('plex-library').classList.add('show');
-  document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><div class="pin-spinner"></div><span>A carregar biblioteca...</span></div>';
-
+async function playPlexItem(ratingKey) {
+  const { url, token } = plexConfig;
   try {
-    // Get server info
-    const infoRes = await plexFetch(`/`);
-    const serverName = infoRes?.MediaContainer?.friendlyName || plexServerUrl;
-    document.getElementById('lib-server-name').textContent = '🎬 ' + serverName;
-
-    // Get sections
-    const secRes = await plexFetch('/library/sections');
-    plexSections = secRes?.MediaContainer?.Directory || [];
-
-    const sectionsEl = document.getElementById('lib-sections');
-    sectionsEl.innerHTML = '';
-    plexSections.forEach((sec, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'section-btn' + (i === 0 ? ' active' : '');
-      btn.textContent = sec.title;
-      btn.onclick = () => {
-        document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        loadSection(sec.key);
-      };
-      sectionsEl.appendChild(btn);
-    });
-
-    if (plexSections.length > 0) loadSection(plexSections[0].key);
-    else document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><span>Nenhuma biblioteca encontrada.</span></div>';
-
-    setStatus('s-plex', 'LIGADO', '');
-    document.getElementById('plex-badge').textContent = 'LIGADO';
-    document.getElementById('plex-badge').className = 'badge plex';
-
-  } catch (e) {
-    document.getElementById('plex-connect').style.display = 'flex';
-    document.getElementById('plex-library').classList.remove('show');
-    showPlexError('Não foi possível ligar. Verifica o servidor, token e CORS.');
-    console.error(e);
-  }
-}
-
-async function loadSection(key) {
-  document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><div class="pin-spinner"></div><span>A carregar...</span></div>';
-  try {
-    const res = await plexFetch(`/library/sections/${key}/all`);
-    const items = res?.MediaContainer?.Metadata || res?.MediaContainer?.Video || [];
-    renderMediaGrid(items);
-  } catch(e) {
-    document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><span style="color:var(--accent2)">Erro ao carregar secção.</span></div>';
-  }
-}
-
-function renderMediaGrid(items) {
-  if (!items.length) {
-    document.getElementById('lib-content').innerHTML = '<div class="lib-loading"><span>Biblioteca vazia.</span></div>';
-    return;
-  }
-  const grid = document.createElement('div');
-  grid.className = 'media-grid';
-
-  items.slice(0, 60).forEach(item => {
-    const el = document.createElement('div');
-    el.className = 'media-item';
-
-    const thumbUrl = item.thumb
-      ? `${plexServerUrl}${item.thumb}?X-Plex-Token=${plexToken}`
-      : null;
-
-    el.innerHTML = `
-      <div class="media-thumb ${thumbUrl ? '' : 'no-img'}">
-        ${thumbUrl
-          ? `<img src="${thumbUrl}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='🎬'">`
-          : '🎬'}
-      </div>
-      <div class="media-title">${item.title || 'Sem título'}</div>
-      ${item.year ? `<div class="media-year">${item.year}</div>` : ''}
-    `;
-
-    el.onclick = () => playPlexItem(item);
-    grid.appendChild(el);
-  });
-
-  document.getElementById('lib-content').innerHTML = '';
-  document.getElementById('lib-content').appendChild(grid);
-}
-
-async function playPlexItem(item) {
-  // Get media parts
-  try {
-    const res = await plexFetch(`/library/metadata/${item.ratingKey}`);
-    const media = res?.MediaContainer?.Metadata?.[0]?.Media?.[0];
-    const part = media?.Part?.[0];
-
-    if (!part?.key) { alert('Não foi possível obter o stream.'); return; }
-
-    const streamUrl = `${plexServerUrl}${part.key}?X-Plex-Token=${plexToken}&download=1`;
-
+    const res = await fetch(`${url}/library/metadata/${ratingKey}?X-Plex-Token=${token}`, { headers: { 'Accept': 'application/json' } });
+    const data = await res.json();
+    const part = data?.MediaContainer?.Metadata?.[0]?.Media?.[0]?.Part?.[0];
+    if (!part?.key) return;
+    const streamUrl = `${url}${part.key}?X-Plex-Token=${token}`;
     const video = document.getElementById('plex-video');
     video.src = streamUrl;
-
-    // Show player
-    document.getElementById('plex-library').classList.remove('show');
-    const playerWrap = document.getElementById('plex-player-wrap');
-    playerWrap.classList.add('show');
-
-    document.getElementById('np-title').textContent = item.title;
-    document.getElementById('np-meta').textContent =
-      [item.year, item.duration ? Math.round(item.duration/60000)+'min' : null].filter(Boolean).join(' · ');
-
-    installBypass(video, plexPaused);
-    video.addEventListener('click', () => { plexPaused.value = !video.paused; });
-    ensureAudio(video);
-    video.play().catch(()=>{});
-
-  } catch(e) {
-    alert('Erro ao iniciar o vídeo: ' + e.message);
-  }
+    video.play().catch(() => {});
+  } catch(e) {}
 }
 
-function closePlexPlayer() {
-  const video = document.getElementById('plex-video');
-  video.pause();
-  video.src = '';
-  document.getElementById('plex-player-wrap').classList.remove('show');
-  document.getElementById('plex-library').classList.add('show');
+function refreshPlex() { loadPlexLibrary(); }
+function disconnectPlex() {
+  plexConfig = { url: '', token: '' };
+  document.getElementById('plex-lib').style.display = 'none';
+  document.getElementById('plex-connect').style.display = 'block';
+  document.getElementById('plex-err').style.display = 'none';
 }
 
-function plexLogout() {
-  plexToken = '';
-  plexServerUrl = '';
-  document.getElementById('plex-library').classList.remove('show');
-  document.getElementById('plex-player-wrap').classList.remove('show');
-  document.getElementById('plex-connect').style.display = 'flex';
-  setStatus('s-plex', 'DESLIGADO', 'off');
-  document.getElementById('plex-badge').textContent = 'DESLIGADO';
-}
-
-function refreshLibrary() { if (plexSections.length) loadSection(plexSections[0].key); }
-
-async function plexFetch(path) {
-  const url = `${plexServerUrl}${path}${path.includes('?') ? '&' : '?'}X-Plex-Token=${plexToken}&X-Plex-Client-Identifier=${CLIENT_ID}`;
-  const res = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-      'X-Plex-Token': plexToken,
-      'X-Plex-Client-Identifier': CLIENT_ID,
-      'X-Plex-Product': 'Tesla Media Center',
-      'X-Plex-Version': '2.0',
-      'X-Plex-Platform': 'Chrome',
-      'X-Plex-Device': 'Tesla',
-    }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-// ── PIN / OAuth flow ──
-async function startPinAuth() {
+async function startPlexPin() {
+  document.getElementById('plex-pin-box').style.display = 'block';
   try {
-    const res = await fetch('https://plex.tv/api/v2/pins', {
+    const res = await fetch('https://plex.tv/api/v2/pins?strong=true', {
       method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Plex-Product': 'Tesla Media Center',
-        'X-Plex-Client-Identifier': CLIENT_ID,
-      },
-      body: JSON.stringify({ strong: true })
+      headers: { 'Accept': 'application/json', 'X-Plex-Product': 'Tesla Media Center', 'X-Plex-Client-Identifier': 'tesla-media-center-v2' }
     });
-    const pin = await res.json();
+    const data = await res.json();
+    document.getElementById('plex-pin-code').textContent = data.code;
 
-    document.getElementById('pin-display').textContent = pin.code;
-    document.getElementById('pin-box').classList.add('show');
-
-    pinPollInterval = setInterval(async () => {
+    plexPinInterval = setInterval(async () => {
       try {
-        const checkRes = await fetch(`https://plex.tv/api/v2/pins/${pin.id}`, {
-          headers: {
-            'Accept': 'application/json',
-            'X-Plex-Client-Identifier': CLIENT_ID,
-            'X-Plex-Product': 'Tesla Media Center',
-          }
+        const r2 = await fetch(`https://plex.tv/api/v2/pins/${data.id}`, {
+          headers: { 'Accept': 'application/json', 'X-Plex-Client-Identifier': 'tesla-media-center-v2' }
         });
-        const data = await checkRes.json();
-        if (data.authToken) {
-          clearInterval(pinPollInterval);
-          plexToken = data.authToken;
-          document.getElementById('plex-token').value = plexToken;
-          document.getElementById('pin-box').classList.remove('show');
-          // Try to auto-connect with plex.tv relay if no server URL
-          if (!document.getElementById('plex-server-url').value.trim()) {
-            await discoverServer();
-          } else {
-            connectPlex();
-          }
+        const d2 = await r2.json();
+        if (d2.authToken) {
+          clearInterval(plexPinInterval);
+          document.getElementById('plex-token').value = d2.authToken;
+          document.getElementById('plex-pin-box').style.display = 'none';
         }
       } catch(e) {}
     }, 2000);
-
-    // Stop after 5min
-    setTimeout(() => cancelPin(), 300000);
   } catch(e) {
-    showPlexError('Erro ao iniciar autenticação PIN. Tenta o método do token manual.');
+    document.getElementById('plex-pin-code').textContent = 'ERRO';
   }
 }
-
-async function discoverServer() {
-  try {
-    const res = await fetch(`https://plex.tv/api/v2/resources?includeHttps=1&includeRelay=1&includeIPv6=1`, {
-      headers: {
-        'Accept': 'application/json',
-        'X-Plex-Token': plexToken,
-        'X-Plex-Client-Identifier': CLIENT_ID,
-        'X-Plex-Product': 'Tesla Media Center',
-      }
-    });
-    const resources = await res.json();
-    const server = resources.find(r => r.provides === 'server');
-    if (server) {
-      // Try local connection first, then relay
-      const local = server.connections.find(c => c.local && c.uri.startsWith('http'));
-      const relay = server.connections.find(c => c.relay);
-      const uri = local?.uri || relay?.uri || server.connections[0]?.uri;
-      if (uri) {
-        plexServerUrl = uri;
-        document.getElementById('plex-server-url').value = uri;
-        fetchPlexLibrary();
-        return;
-      }
-    }
-    showPlexError('Servidor encontrado mas sem URI acessível. Introduz o URL manualmente.');
-  } catch(e) {
-    showPlexError('Não foi possível descobrir o servidor. Introduz o URL manualmente.');
-  }
+function cancelPlexPin() {
+  clearInterval(plexPinInterval);
+  document.getElementById('plex-pin-box').style.display = 'none';
 }
 
-function cancelPin() {
-  clearInterval(pinPollInterval);
-  document.getElementById('pin-box').classList.remove('show');
-}
+// ─────────────────────────────────────────────────
+// JELLYFIN
+// ─────────────────────────────────────────────────
+let jfConfig = { url: '', token: '', userId: '' };
 
-// ════════════════════════════════════════
-// YOUTUBE SEARCH
-// ════════════════════════════════════════
-let ytCurrentVideoId = 'jfKfPfyJRdk';
-let ytCurrentTitle = 'lofi hip hop radio — beats to relax/study';
-let ytSearchResults = [];
-let ytSelectedIndex = -1;
-
-async function ytSearch() {
-  const query = document.getElementById('yt-search-input').value.trim();
-  if (!query) return;
-
-  const btn = document.getElementById('yt-search-btn');
-  const resultsEl = document.getElementById('yt-results');
-
-  btn.disabled = true;
-  btn.textContent = '⏳ A pesquisar...';
-  resultsEl.classList.add('show');
-  resultsEl.innerHTML = '<div class="yt-results-loading"><div class="pin-spinner" style="border-top-color:var(--accent)"></div><span>A pesquisar no YouTube...</span></div>';
+async function connectJF() {
+  const url = document.getElementById('jf-url').value.trim().replace(/\/$/, '');
+  const user = document.getElementById('jf-user').value.trim();
+  const pass = document.getElementById('jf-pass').value;
 
   try {
-    // Use YouTube's suggest/search API via a CORS proxy approach
-    // We'll use the YouTube oEmbed + search suggestions as a workaround
-    // Fetch search results via YouTube's internal suggest endpoint (returns JSON)
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=EgIQAQ%3D%3D')}`;
-    const res = await fetch(proxyUrl);
-    const html = await res.text();
-
-    // Extract ytInitialData from the HTML
-    const match = html.match(/var ytInitialData = ({.*?});<\/script>/s) ||
-                  html.match(/ytInitialData\s*=\s*({.+?});\s*(?:var|window|<\/script)/s);
-
-    if (!match) throw new Error('Não foi possível obter resultados.');
-
-    const data = JSON.parse(match[1]);
-    const contents = data?.contents?.twoColumnSearchResultsRenderer
-      ?.primaryContents?.sectionListRenderer?.contents?.[0]
-      ?.itemSectionRenderer?.contents || [];
-
-    ytSearchResults = contents
-      .filter(item => item.videoRenderer)
-      .map(item => {
-        const v = item.videoRenderer;
-        return {
-          id: v.videoId,
-          title: v.title?.runs?.[0]?.text || 'Sem título',
-          channel: v.ownerText?.runs?.[0]?.text || '',
-          thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-        };
-      }).slice(0, 12);
-
-    renderYtResults(ytSearchResults, query);
-  } catch(e) {
-    // Fallback: use invidious or show manual input
-    resultsEl.innerHTML = `
-      <div class="yt-results-empty">
-        ⚠ Não foi possível pesquisar automaticamente (CORS).<br><br>
-        <span style="color:var(--text)">Cola diretamente um URL ou ID do YouTube:</span><br>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input class="yt-search-input" id="yt-direct-id" placeholder="URL ou ID do vídeo (ex: dQw4w9WgXcQ)" style="font-size:12px">
-          <button class="yt-search-btn" onclick="ytLoadDirect()">▶ Carregar</button>
-        </div>
-      </div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔍 Pesquisar';
-  }
-}
-
-function renderYtResults(results, query) {
-  const el = document.getElementById('yt-results');
-  if (!results.length) {
-    el.innerHTML = `<div class="yt-results-empty">Nenhum resultado para "<strong>${query}</strong>". Tenta outra pesquisa.</div>`;
-    return;
-  }
-  el.innerHTML = '';
-  results.forEach((r, i) => {
-    const item = document.createElement('div');
-    item.className = 'yt-result-item' + (i === ytSelectedIndex ? ' active' : '');
-    item.innerHTML = `
-      <img class="yt-result-thumb" src="${r.thumb}" alt="" onerror="this.style.background='var(--surface)';this.src=''">
-      <div class="yt-result-info">
-        <div class="yt-result-title">${r.title}</div>
-        <div class="yt-result-channel">${r.channel}</div>
-      </div>
-      <span style="color:var(--dim);font-size:20px">▶</span>
-    `;
-    item.onclick = () => ytPlayResult(i);
-    el.appendChild(item);
-  });
-}
-
-function ytPlayResult(index) {
-  const r = ytSearchResults[index];
-  if (!r) return;
-  ytSelectedIndex = index;
-
-  // Update active state
-  document.querySelectorAll('.yt-result-item').forEach((el, i) => {
-    el.classList.toggle('active', i === index);
-  });
-
-  // Load in iframe
-  const frame = document.getElementById('yt-frame');
-  frame.src = `https://www.youtube.com/embed/${r.id}?rel=0&modestbranding=1&enablejsapi=1&autoplay=1`;
-  document.getElementById('yt-player-title').textContent = r.title;
-  document.getElementById('yt-bar-label').textContent = r.title + (r.channel ? ' — ' + r.channel : '');
-  ytCurrentVideoId = r.id;
-  ytCurrentTitle = r.title;
-}
-
-function ytLoadDirect() {
-  const val = (document.getElementById('yt-direct-id')?.value || '').trim();
-  if (!val) return;
-
-  // Extract video ID from URL or use as-is
-  let videoId = val;
-  const urlMatch = val.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  if (urlMatch) videoId = urlMatch[1];
-
-  if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-    alert('ID ou URL inválido.');
-    return;
-  }
-
-  ytSearchResults = [{ id: videoId, title: 'Vídeo ' + videoId, channel: '', thumb: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` }];
-  ytPlayResult(0);
-  document.getElementById('yt-results').classList.remove('show');
-}
-
-// ════════════════════════════════════════
-// JELLYFIN INTEGRATION
-// ════════════════════════════════════════
-let jellyToken = '';
-let jellyServerUrl = '';
-let jellyUserId = '';
-let jellySections = [];
-const jellyPaused = { value: false };
-const JELLY_CLIENT = 'Tesla Media Center';
-const JELLY_DEVICE = 'Tesla';
-const JELLY_DEVICE_ID = 'tesla-media-' + Math.random().toString(36).slice(2);
-const JELLY_VERSION = '2.0';
-
-function jellyAuthHeader() {
-  let auth = `MediaBrowser Client="${JELLY_CLIENT}", Device="${JELLY_DEVICE}", DeviceId="${JELLY_DEVICE_ID}", Version="${JELLY_VERSION}"`;
-  if (jellyToken) auth += `, Token="${jellyToken}"`;
-  return auth;
-}
-
-async function jellyFetch(path, opts = {}) {
-  const url = `${jellyServerUrl}${path}`;
-  const res = await fetch(url, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Emby-Authorization': jellyAuthHeader(),
-      ...(opts.headers || {}),
-    }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-async function connectJellyfin() {
-  const url = document.getElementById('jelly-server-url').value.trim().replace(/\/$/, '');
-  const username = document.getElementById('jelly-username').value.trim();
-  const password = document.getElementById('jelly-password').value;
-
-  if (!url || !username) { showJellyError('Preenche o URL do servidor e o utilizador.'); return; }
-
-  jellyServerUrl = url;
-  const btn = document.getElementById('jelly-connect-btn');
-  btn.disabled = true; btn.textContent = '⏳ A ligar...';
-
-  try {
-    const data = await jellyFetch('/Users/AuthenticateByName', {
+    const res = await fetch(`${url}/Users/AuthenticateByName`, {
       method: 'POST',
-      body: JSON.stringify({ Username: username, Pw: password })
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Emby-Authorization': 'MediaBrowser Client="Tesla Media Center", Device="Tesla", DeviceId="tesla-mc", Version="2.1"'
+      },
+      body: JSON.stringify({ Username: user, Pw: pass })
     });
-    jellyToken = data.AccessToken;
-    jellyUserId = data.User?.Id;
-    await fetchJellyLibrary(data.User?.Name || username);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    jfConfig = { url, token: data.AccessToken, userId: data.User.Id };
+    document.getElementById('jf-connect').style.display = 'none';
+    document.getElementById('jf-lib').style.display = 'block';
+    loadJFLibrary();
   } catch(e) {
-    showJellyError('Não foi possível ligar. Verifica o URL, utilizador e palavra-passe.');
-  } finally {
-    btn.disabled = false; btn.textContent = '🪼 Ligar ao Jellyfin';
+    document.getElementById('jf-err').style.display = 'block';
   }
 }
 
-function showJellyError(msg) {
-  const el = document.getElementById('jellyfin-error');
-  el.textContent = '⚠ ' + msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 5000);
-}
-
-async function fetchJellyLibrary(serverName) {
-  document.getElementById('jellyfin-setup').style.display = 'none';
-  document.getElementById('jellyfin-library').classList.add('show');
-  document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><div class="pin-spinner" style="border-top-color:#00a4dc"></div><span>A carregar biblioteca...</span></div>';
-
+async function loadJFLibrary() {
+  const { url, token, userId } = jfConfig;
   try {
-    // Get views (libraries)
-    const views = await jellyFetch(`/Users/${jellyUserId}/Views`);
-    jellySections = (views.Items || []).filter(v => ['movies','tvshows','music','homevideos'].includes(v.CollectionType));
-
-    document.getElementById('jelly-server-name').textContent = '🪼 ' + serverName;
-
-    const sectionsEl = document.getElementById('jelly-sections');
-    sectionsEl.innerHTML = '';
-    jellySections.forEach((sec, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'jelly-section-btn' + (i === 0 ? ' active' : '');
-      btn.textContent = sec.Name;
-      btn.onclick = () => {
-        document.querySelectorAll('.jelly-section-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        loadJellySection(sec.Id);
-      };
-      sectionsEl.appendChild(btn);
+    const res = await fetch(`${url}/Users/${userId}/Items?IncludeItemTypes=Movie,Episode&Recursive=true&Limit=40&SortBy=DateCreated&SortOrder=Descending`, {
+      headers: { 'X-MediaBrowser-Token': token }
     });
-
-    if (jellySections.length) loadJellySection(jellySections[0].Id);
-    else document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><span>Nenhuma biblioteca encontrada.</span></div>';
-
-    setStatus('s-jelly', 'LIGADO', '');
-    document.getElementById('jelly-badge').textContent = 'LIGADO';
-  } catch(e) {
-    document.getElementById('jellyfin-setup').style.display = 'flex';
-    document.getElementById('jellyfin-library').classList.remove('show');
-    showJellyError('Erro ao carregar biblioteca: ' + e.message);
-  }
+    const data = await res.json();
+    const grid = document.getElementById('jf-grid');
+    grid.innerHTML = '';
+    (data.Items || []).forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'lib-item';
+      const imgUrl = `${url}/Items/${item.Id}/Images/Primary?height=100&token=${token}`;
+      div.innerHTML = `<div class="lib-thumb"><img src="${imgUrl}" onerror="this.style.display='none'"></div><div class="title">${item.Name}</div>`;
+      div.onclick = () => playJFItem(item.Id);
+      grid.appendChild(div);
+    });
+  } catch(e) {}
 }
 
-async function loadJellySection(parentId) {
-  document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><div class="pin-spinner" style="border-top-color:#00a4dc"></div><span>A carregar...</span></div>';
-  try {
-    const data = await jellyFetch(`/Users/${jellyUserId}/Items?ParentId=${parentId}&Recursive=true&IncludeItemTypes=Movie,Episode,Video&Fields=Overview,MediaSources&SortBy=SortName&SortOrder=Ascending&Limit=100`);
-    renderJellyGrid(data.Items || []);
-  } catch(e) {
-    document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><span style="color:var(--accent2)">Erro ao carregar secção.</span></div>';
-  }
+function playJFItem(itemId) {
+  const { url, token, userId } = jfConfig;
+  const streamUrl = `${url}/Videos/${itemId}/stream?Static=true&api_key=${token}`;
+  const video = document.getElementById('jf-video');
+  video.src = streamUrl;
+  video.play().catch(() => {});
 }
 
-function renderJellyGrid(items) {
-  if (!items.length) {
-    document.getElementById('jelly-lib-content').innerHTML = '<div class="jelly-lib-loading"><span>Biblioteca vazia.</span></div>';
-    return;
-  }
-  const grid = document.createElement('div');
-  grid.className = 'jelly-media-grid';
-
-  items.forEach(item => {
-    const el = document.createElement('div');
-    el.className = 'jelly-media-item';
-    const thumbUrl = `${jellyServerUrl}/Items/${item.Id}/Images/Primary?maxHeight=240&quality=80&api_key=${jellyToken}`;
-    el.innerHTML = `
-      <div class="jelly-media-thumb">
-        <img src="${thumbUrl}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='🎬'">
-      </div>
-      <div class="jelly-media-title">${item.Name || 'Sem título'}</div>
-      ${item.ProductionYear ? `<div class="jelly-media-year">${item.ProductionYear}</div>` : ''}
-    `;
-    el.onclick = () => playJellyItem(item);
-    grid.appendChild(el);
-  });
-
-  document.getElementById('jelly-lib-content').innerHTML = '';
-  document.getElementById('jelly-lib-content').appendChild(grid);
+function refreshJF() { loadJFLibrary(); }
+function disconnectJF() {
+  jfConfig = { url: '', token: '', userId: '' };
+  document.getElementById('jf-lib').style.display = 'none';
+  document.getElementById('jf-connect').style.display = 'block';
+  document.getElementById('jf-err').style.display = 'none';
 }
 
-async function playJellyItem(item) {
-  try {
-    // Get playback info for direct stream URL
-    const info = await jellyFetch(`/Items/${item.Id}/PlaybackInfo?UserId=${jellyUserId}`, { method: 'POST', body: JSON.stringify({ DeviceProfile: {} }) });
-    const mediaSource = info?.MediaSources?.[0];
-    if (!mediaSource) throw new Error('Sem fonte de media.');
-
-    // Build direct stream URL
-    const streamUrl = `${jellyServerUrl}/Videos/${item.Id}/stream?Static=true&MediaSourceId=${mediaSource.Id}&api_key=${jellyToken}`;
-
-    const video = document.getElementById('jellyfin-video');
-    video.src = streamUrl;
-
-    document.getElementById('jellyfin-library').classList.remove('show');
-    document.getElementById('jellyfin-player-wrap').classList.add('show');
-    document.getElementById('jelly-np-title').textContent = item.Name;
-    document.getElementById('jelly-np-meta').textContent =
-      [item.ProductionYear, item.RunTimeTicks ? Math.round(item.RunTimeTicks / 600000000) + 'min' : null].filter(Boolean).join(' · ');
-
-    installBypass(video, jellyPaused);
-    video.addEventListener('click', () => { jellyPaused.value = !video.paused; });
-    ensureAudio(video);
-    video.play().catch(() => {});
-  } catch(e) {
-    alert('Erro ao iniciar o vídeo: ' + e.message);
-  }
-}
-
-function closeJellyPlayer() {
-  const video = document.getElementById('jellyfin-video');
-  video.pause(); video.src = '';
-  document.getElementById('jellyfin-player-wrap').classList.remove('show');
-  document.getElementById('jellyfin-library').classList.add('show');
-}
-
-function jellyLogout() {
-  jellyToken = ''; jellyServerUrl = ''; jellyUserId = ''; jellySections = [];
-  const video = document.getElementById('jellyfin-video');
-  video.pause(); video.src = '';
-  document.getElementById('jellyfin-library').classList.remove('show');
-  document.getElementById('jellyfin-player-wrap').classList.remove('show');
-  document.getElementById('jellyfin-setup').style.display = 'flex';
-  setStatus('s-jelly', 'DESLIGADO', 'off');
-  document.getElementById('jelly-badge').textContent = 'DESLIGADO';
-}
-
-function jellyRefresh() {
-  if (jellySections.length) loadJellySection(jellySections[0].Id);
-}
-
-// ════════════════════════════════════════
-// IPTV M3U
-// ════════════════════════════════════════
+// ─────────────────────────────────────────────────
+// IPTV
+// ─────────────────────────────────────────────────
 let iptvChannels = [];
-let iptvFiltered = [];
-let iptvCurrentGroup = 'Todos';
-let iptvCurrentIndex = -1;
-const iptvPaused = { value: false };
+let iptvIndex = 0;
+
+async function loadM3U() {
+  const url = document.getElementById('m3u-url').value.trim();
+  if (!url) return;
+  try {
+    let text;
+    try {
+      const res = await fetch(url);
+      text = await res.text();
+    } catch(e) {
+      // Tenta proxy CORS
+      const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+      const res = await fetch(proxy);
+      text = await res.text();
+    }
+    iptvChannels = parseM3U(text);
+    renderIPTVList();
+    document.getElementById('iptv-clear-btn').style.display = '';
+  } catch(e) {
+    alert('Erro ao carregar a lista M3U. Verifica o URL.');
+  }
+}
 
 function parseM3U(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const channels = [];
-  let current = null;
-
+  const lines = text.split('\n');
+  let current = {};
   for (const line of lines) {
-    if (line.startsWith('#EXTINF')) {
-      current = { name: '', group: 'Geral', logo: '', url: '' };
-      // Extract name (after last comma)
-      const nameMatch = line.match(/,(.+)$/);
+    const l = line.trim();
+    if (l.startsWith('#EXTINF')) {
+      current = {};
+      const nameMatch = l.match(/,(.+)$/);
       if (nameMatch) current.name = nameMatch[1].trim();
-      // Extract group-title
-      const groupMatch = line.match(/group-title="([^"]*)"/i);
-      if (groupMatch) current.group = groupMatch[1] || 'Geral';
-      // Extract tvg-logo
-      const logoMatch = line.match(/tvg-logo="([^"]*)"/i);
-      if (logoMatch) current.logo = logoMatch[1] || '';
-    } else if (line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('rtsp')) {
-      if (current) {
-        current.url = line;
-        channels.push(current);
-        current = null;
-      }
+      const logoMatch = l.match(/tvg-logo="([^"]+)"/);
+      if (logoMatch) current.logo = logoMatch[1];
+      const groupMatch = l.match(/group-title="([^"]+)"/);
+      if (groupMatch) current.group = groupMatch[1];
+    } else if (l && !l.startsWith('#')) {
+      current.url = l;
+      if (current.name) channels.push({ ...current });
+      current = {};
     }
   }
   return channels;
 }
 
-async function loadM3U() {
-  const url = document.getElementById('iptv-m3u-url').value.trim();
-  if (!url) { showIptvError('Introduz o URL da lista M3U.'); return; }
-
-  const btn = document.getElementById('iptv-load-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ A carregar...';
-  document.getElementById('iptv-error').classList.remove('show');
-
-  try {
-    // Try direct fetch first, fallback to CORS proxy
-    let text;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      text = await res.text();
-    } catch {
-      const proxyRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-      if (!proxyRes.ok) throw new Error('Não foi possível carregar a lista M3U.');
-      text = await proxyRes.text();
-    }
-
-    if (!text.includes('#EXTM3U') && !text.includes('#EXTINF')) {
-      throw new Error('Ficheiro inválido — não parece ser uma lista M3U.');
-    }
-
-    iptvChannels = parseM3U(text);
-    if (!iptvChannels.length) throw new Error('Nenhum canal encontrado na lista.');
-
-    iptvFiltered = [...iptvChannels];
-    renderIptvLibrary();
-
-  } catch(e) {
-    showIptvError(e.message || 'Erro ao carregar a lista.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '📡 Carregar Lista';
-  }
-}
-
-function showIptvError(msg) {
-  const el = document.getElementById('iptv-error');
-  el.textContent = '⚠ ' + msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 5000);
-}
-
-function renderIptvLibrary() {
-  document.getElementById('iptv-setup').style.display = 'none';
-  document.getElementById('iptv-library').classList.add('show');
-
-  const total = iptvChannels.length;
-  const m3uUrl = document.getElementById('iptv-m3u-url').value;
-  const listName = m3uUrl.split('/').pop().split('?')[0] || 'Lista IPTV';
-  document.getElementById('iptv-lib-name').textContent = '📡 ' + listName;
-  document.getElementById('iptv-ch-count').textContent = total + ' canais';
-
-  setStatus('s-iptv', 'LIGADO', '');
-  document.getElementById('iptv-badge').textContent = 'LIGADO';
-
-  // Build group tabs
-  const groups = ['Todos', ...new Set(iptvChannels.map(c => c.group).filter(Boolean))];
-  const groupsEl = document.getElementById('iptv-groups');
-  groupsEl.innerHTML = '';
-  groups.slice(0, 40).forEach(g => {
-    const btn = document.createElement('button');
-    btn.className = 'iptv-group-btn' + (g === iptvCurrentGroup ? ' active' : '');
-    btn.textContent = g;
-    btn.onclick = () => {
-      iptvCurrentGroup = g;
-      document.querySelectorAll('.iptv-group-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('iptv-filter').value = '';
-      filterIptvChannels('');
-    };
-    groupsEl.appendChild(btn);
+function renderIPTVList() {
+  const list = document.getElementById('iptv-list');
+  list.innerHTML = '';
+  list.style.display = 'block';
+  iptvChannels.forEach((ch, i) => {
+    const div = document.createElement('div');
+    div.className = 'iptv-item' + (i === iptvIndex ? ' active' : '');
+    div.innerHTML = `${ch.logo ? `<img src="${ch.logo}" onerror="this.style.display='none'">` : ''}<span>${ch.name || 'Canal ' + (i+1)}</span>${ch.group ? `<span style="margin-left:auto;color:var(--muted);font-size:.6rem">${ch.group}</span>` : ''}`;
+    div.onclick = () => playIPTVChannel(i);
+    list.appendChild(div);
   });
-
-  filterIptvChannels('');
 }
 
-function filterIptvChannels(query) {
-  const q = query.toLowerCase();
-  iptvFiltered = iptvChannels.filter(c => {
-    const groupMatch = iptvCurrentGroup === 'Todos' || c.group === iptvCurrentGroup;
-    const nameMatch = !q || c.name.toLowerCase().includes(q);
-    return groupMatch && nameMatch;
-  });
-  renderIptvChannels();
-}
-
-function renderIptvChannels() {
-  const wrap = document.getElementById('iptv-channel-list-wrap');
-  if (!iptvFiltered.length) {
-    wrap.innerHTML = '<div class="iptv-no-channels">Nenhum canal encontrado.</div>';
-    return;
-  }
-  const list = document.createElement('div');
-  list.className = 'iptv-channel-list';
-
-  iptvFiltered.slice(0, 200).forEach((ch, i) => {
-    const globalIdx = iptvChannels.indexOf(ch);
-    const item = document.createElement('div');
-    item.className = 'iptv-channel-item' + (globalIdx === iptvCurrentIndex ? ' active' : '');
-    item.innerHTML = `
-      ${ch.logo
-        ? `<img class="iptv-ch-logo" src="${ch.logo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-        : ''}
-      <div class="iptv-ch-logo-placeholder" style="${ch.logo ? 'display:none' : ''}">📺</div>
-      <div class="iptv-ch-info">
-        <div class="iptv-ch-name">${ch.name || 'Canal ' + (i+1)}</div>
-        <div class="iptv-ch-group">${ch.group || ''}</div>
-      </div>
-      <span class="iptv-ch-play">▶</span>
-    `;
-    item.onclick = () => playIptvChannel(globalIdx);
-    list.appendChild(item);
-  });
-
-  wrap.innerHTML = '';
-  wrap.appendChild(list);
-}
-
-function playIptvChannel(index) {
-  const ch = iptvChannels[index];
-  if (!ch) return;
-  iptvCurrentIndex = index;
-
+function playIPTVChannel(i) {
+  iptvIndex = i;
+  const ch = iptvChannels[i];
   const video = document.getElementById('iptv-video');
   video.src = ch.url;
-
-  document.getElementById('iptv-library').classList.remove('show');
-  const playerWrap = document.getElementById('iptv-player-wrap');
-  playerWrap.classList.add('show');
-
-  document.getElementById('iptv-np-title').textContent = ch.name || 'Canal';
-  document.getElementById('iptv-np-group').textContent = ch.group || '';
-
-  installBypass(video, iptvPaused);
-  video.addEventListener('click', () => { iptvPaused.value = !video.paused; });
-  ensureAudio(video);
   video.play().catch(() => {});
+  document.getElementById('iptv-nav').style.display = '';
+  renderIPTVList();
 }
 
-function iptvNextChannel() {
-  if (iptvCurrentIndex < iptvChannels.length - 1) {
-    playIptvChannel(iptvCurrentIndex + 1);
-  }
+function iptvPrev() {
+  if (iptvChannels.length === 0) return;
+  iptvIndex = (iptvIndex - 1 + iptvChannels.length) % iptvChannels.length;
+  playIPTVChannel(iptvIndex);
 }
-
-function iptvPrevChannel() {
-  if (iptvCurrentIndex > 0) {
-    playIptvChannel(iptvCurrentIndex - 1);
-  }
+function iptvNext() {
+  if (iptvChannels.length === 0) return;
+  iptvIndex = (iptvIndex + 1) % iptvChannels.length;
+  playIPTVChannel(iptvIndex);
 }
-
-function closeIptvPlayer() {
-  const video = document.getElementById('iptv-video');
-  video.pause();
-  video.src = '';
-  document.getElementById('iptv-player-wrap').classList.remove('show');
-  document.getElementById('iptv-library').classList.add('show');
-  renderIptvChannels(); // refresh active state
-}
-
-function iptvLogout() {
+function showIPTVList() { renderIPTVList(); }
+function clearIPTV() {
+  iptvChannels = [];
+  document.getElementById('iptv-list').style.display = 'none';
+  document.getElementById('iptv-list').innerHTML = '';
+  document.getElementById('iptv-nav').style.display = 'none';
+  document.getElementById('iptv-clear-btn').style.display = 'none';
   const video = document.getElementById('iptv-video');
   video.pause(); video.src = '';
-  iptvChannels = []; iptvFiltered = []; iptvCurrentIndex = -1; iptvCurrentGroup = 'Todos';
-  document.getElementById('iptv-library').classList.remove('show');
-  document.getElementById('iptv-player-wrap').classList.remove('show');
-  document.getElementById('iptv-setup').style.display = 'flex';
-  setStatus('s-iptv', 'INATIVO', 'off');
-  document.getElementById('iptv-badge').textContent = 'DESLIGADO';
 }
 
-// User interaction → AudioContext
-document.addEventListener('click', () => {
-  const active = document.querySelector('.tab-panel.active');
-  let vid = active?.querySelector('video');
-  ensureAudio(vid);
-}, { once: true });
+// ─────────────────────────────────────────────────
+// COPY CODE
+// ─────────────────────────────────────────────────
+function copyCode() {
+  const code = document.getElementById('code-block').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ COPIADO';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
 </script>
+
+<!-- ── BYPASS PRINCIPAL ─────────────────────────── -->
+<script>
+(function TeslaBypass() {
+  'use strict';
+  const RETRY_INTERVAL = 200;
+  const RETRY_DURATION = 3000;
+
+  let audioCtx = null;
+  let wakeLock = null;
+  let userPaused = false;
+  let retryTimer = null;
+
+  function tryPlay(video) {
+    if (!video || userPaused) return;
+    video.play().catch(() => {});
+  }
+
+  function tryPlayYT() {
+    const p = window._ytPlayer || (window.ytPlayerObj);
+    if (p && typeof p.playVideo === 'function') p.playVideo();
+  }
+
+  function initAudio(video) {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaElementSource(video);
+      src.connect(audioCtx.destination);
+    } catch(e) {}
+  }
+
+  async function requestWakeLock() {
+    try {
+      if (navigator.wakeLock) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          if (document.visibilityState === 'visible') requestWakeLock();
+        });
+      }
+    } catch(e) {}
+  }
+  requestWakeLock();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      document.querySelectorAll('video').forEach(v => {
+        if (!v.paused || v.readyState >= 2) tryPlay(v);
+      });
+      tryPlayYT();
+
+      clearInterval(retryTimer);
+      const deadline = Date.now() + RETRY_DURATION;
+      retryTimer = setInterval(() => {
+        if (Date.now() > deadline) { clearInterval(retryTimer); return; }
+        document.querySelectorAll('video').forEach(v => {
+          if (v.paused && !userPaused) tryPlay(v);
+        });
+        if (!userPaused) tryPlayYT();
+      }, RETRY_INTERVAL);
+    } else {
+      clearInterval(retryTimer);
+      if (!wakeLock || wakeLock.released) requestWakeLock();
+    }
+    updateStatus();
+  });
+
+  function attachVideoBypass(video) {
+    if (video._bypassAttached) return;
+    video._bypassAttached = true;
+
+    // CORRIGIDO: regista intenção ANTES do evento pause
+    video.addEventListener('mousedown', () => {
+      userPaused = !video.paused; // se está a tocar e clicou → quer pausar
+    });
+    video.addEventListener('touchstart', () => {
+      userPaused = !video.paused;
+    });
+
+    video.addEventListener('pause', () => {
+      if (!userPaused) setTimeout(() => tryPlay(video), 80);
+    });
+    video.addEventListener('play', () => {
+      initAudio(video);
+      userPaused = false;
+    });
+  }
+
+  function updateStatus() {
+    const stVis = document.getElementById('st-vis');
+    const stAudio = document.getElementById('st-audio');
+    const stWake = document.getElementById('st-wake');
+    if (stVis) { const h = document.visibilityState === 'hidden'; stVis.textContent = h ? 'HIDDEN' : 'VISIBLE'; stVis.className = 'val '+(h?'err':'ok'); }
+    if (stAudio) { stAudio.textContent = audioCtx ? audioCtx.state.toUpperCase() : 'INATIVO'; stAudio.className = 'val '+(audioCtx?.state==='running'?'ok':'warn'); }
+    if (stWake) { stWake.textContent = (wakeLock&&!wakeLock.released)?'ATIVO':'INATIVO'; stWake.className = 'val '+((wakeLock&&!wakeLock.released)?'ok':'warn'); }
+  }
+
+  document.querySelectorAll('video').forEach(attachVideoBypass);
+  const obs = new MutationObserver(m => m.forEach(mut => mut.addedNodes.forEach(n => {
+    if (n.tagName==='VIDEO') attachVideoBypass(n);
+    else if (n.querySelectorAll) n.querySelectorAll('video').forEach(attachVideoBypass);
+  })));
+  obs.observe(document.body, { childList: true, subtree: true });
+
+  setInterval(updateStatus, 2000);
+  updateStatus();
+})();
+</script>
+
 </body>
 </html>
