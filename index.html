@@ -1385,7 +1385,43 @@ function ensureAudio(videoEl) {
   } catch(e) {}
 }
 
-// visibilitychange — o truque principal
+// ── Deteção de condução por polling do gear (Tesla Chromium expõe window.tesla.ShiftState) ──
+// Isto é mais fiável do que visibilitychange em algumas versões de firmware
+let _lastGear = null;
+function pollTeslaGear() {
+  try {
+    const gear =
+      window?.tesla?.ShiftState ??
+      window?.TeslaApp?.shiftState ??
+      window?.shiftState ??
+      window?.tesla?.vehicle?.gear ??
+      null;
+
+    if (gear === _lastGear) return;
+    _lastGear = gear;
+
+    const driving = gear !== null && gear !== 'P' && gear !== 'park' && gear !== '';
+    if (driving && !simActive) {
+      // Entrou em marcha — ativar bypass
+      setStatus('s-vis', 'DRIVING (' + gear + ')', 'warn');
+      document.getElementById('hud-mode').textContent = gear === 'R' ? 'REVERSE' : 'DRIVING';
+      document.getElementById('hud-mode').className = 'hud-value warn';
+      document.getElementById('drive-banner')?.classList.add('show');
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      resumeAllVideos();
+    } else if (gear === 'P' || gear === 'park') {
+      if (!simActive) {
+        setStatus('s-vis', 'PARKED', '');
+        document.getElementById('hud-mode').textContent = 'PARKED';
+        document.getElementById('hud-mode').className = 'hud-value';
+        document.getElementById('drive-banner')?.classList.remove('show');
+      }
+    }
+  } catch(e) {}
+}
+setInterval(pollTeslaGear, 500);
+
+// visibilitychange — o truque principal (mantido como fallback)
 document.addEventListener('visibilitychange', () => {
   const hidden = document.visibilityState === 'hidden';
   if (!simActive) setStatus('s-vis', hidden ? 'HIDDEN' : 'VISIBLE', hidden ? 'warn' : '');
@@ -1432,13 +1468,10 @@ function resumeAllVideos() {
 }
 
 function installBypass(videoEl, isPausedRef) {
-  // Remove previous listeners by cloning... instead we track with a flag
+  // Permite re-instalar se o elemento foi reutilizado (ex: mudar de canal IPTV)
   if (videoEl._bypassInstalled) return;
   videoEl._bypassInstalled = true;
 
-  // JITTER FIX: use a single debounced resume instead of 3 stacked timeouts.
-  // Multiple consecutive play() calls on a paused video in quick succession cause
-  // the "engasgo" (stop/start loop). We debounce to a single resume attempt.
   let resumeTimer = null;
   function debouncedResume(delayMs) {
     clearTimeout(resumeTimer);
@@ -1451,15 +1484,24 @@ function installBypass(videoEl, isPausedRef) {
 
   videoEl.addEventListener('pause', () => {
     if (!isPausedRef.value) {
-      // Single debounced resume — avoids the play/pause loop that causes engasgos
-      debouncedResume(120);
+      const isDriving = _lastGear && _lastGear !== 'P' && _lastGear !== 'park';
+      const forceResume = document.visibilityState === 'hidden' || isDriving || simActive;
+      debouncedResume(forceResume ? 60 : 120);
     }
   });
 
-  // Re-play after buffering/stall — only if not user-paused
   videoEl.addEventListener('stalled', () => { if (!isPausedRef.value) debouncedResume(600); });
   videoEl.addEventListener('waiting', () => {
-    if (!isPausedRef.value && document.visibilityState === 'hidden') debouncedResume(300);
+    const isDriving = _lastGear && _lastGear !== 'P' && _lastGear !== 'park';
+    if (!isPausedRef.value && (document.visibilityState === 'hidden' || isDriving || simActive)) {
+      debouncedResume(300);
+    }
+  });
+  videoEl.addEventListener('canplay', () => {
+    const isDriving = _lastGear && _lastGear !== 'P' && _lastGear !== 'park';
+    if (!isPausedRef.value && (isDriving || simActive || document.visibilityState === 'hidden')) {
+      videoEl.play().catch(() => {});
+    }
   });
 }
 
@@ -1509,6 +1551,218 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
 }
+
+// ════════════════════════════════════════
+// TESLA LIVE DATA
+// ════════════════════════════════════════
+
+// O Tesla Chromium expõe dados do veículo em vários namespaces
+// dependendo da versão do firmware. Tentamos todos.
+function getTeslaVar(...paths) {
+  for (const path of paths) {
+    try {
+      const parts = path.split('.');
+      let obj = window;
+      for (const p of parts) {
+        if (obj == null) break;
+        obj = obj[p];
+      }
+      if (obj !== undefined && obj !== null && obj !== '') return obj;
+    } catch(e) {}
+  }
+  return null;
+}
+
+// Lê todos os dados disponíveis do veículo
+function readTeslaData() {
+  // Velocidade — várias fontes possíveis
+  const speed =
+    getTeslaVar('tesla.VehicleSpeed', 'TeslaApp.vehicleSpeed', 'vehicleSpeed',
+                'tesla.vehicle.speed', 'TeslaAPI.speed') ??
+    getTeslaVar('window.vehicleSpeed', 'car.speed');
+
+  // Estado de condução
+  const gear =
+    getTeslaVar('tesla.ShiftState', 'TeslaApp.shiftState', 'shiftState',
+                'tesla.vehicle.gear', 'TeslaAPI.shiftState') ??
+    getTeslaVar('window.shiftState', 'car.gear');
+
+  // Bateria
+  const battPct =
+    getTeslaVar('tesla.BatteryLevel', 'TeslaApp.batteryLevel', 'batteryLevel',
+                'tesla.vehicle.battery.level', 'TeslaAPI.batteryLevel');
+
+  const battRange =
+    getTeslaVar('tesla.EstBatteryRange', 'TeslaApp.estimatedRange', 'estimatedRange',
+                'tesla.vehicle.battery.range');
+
+  // Temperatura
+  const tempInside =
+    getTeslaVar('tesla.InsideTemp', 'TeslaApp.insideTemp', 'insideTemp');
+
+  const tempOutside =
+    getTeslaVar('tesla.OutsideTemp', 'TeslaApp.outsideTemp', 'outsideTemp');
+
+  // Localização
+  const lat =
+    getTeslaVar('tesla.Latitude', 'TeslaApp.latitude', 'latitude',
+                'tesla.vehicle.location.latitude');
+
+  const lon =
+    getTeslaVar('tesla.Longitude', 'TeslaApp.longitude', 'longitude',
+                'tesla.vehicle.location.longitude');
+
+  // Potência / energia
+  const power =
+    getTeslaVar('tesla.Power', 'TeslaApp.power', 'power',
+                'tesla.vehicle.power');
+
+  // Odómetro
+  const odometer =
+    getTeslaVar('tesla.Odometer', 'TeslaApp.odometer', 'odometer');
+
+  // Carregamento
+  const chargeRate =
+    getTeslaVar('tesla.ChargeRate', 'TeslaApp.chargeRate', 'chargeRate');
+
+  const isCharging =
+    getTeslaVar('tesla.ChargingState', 'TeslaApp.chargingState', 'chargingState');
+
+  // Estado do software
+  const softwareVersion =
+    getTeslaVar('tesla.CarVersion', 'TeslaApp.carVersion', 'carVersion');
+
+  return {
+    speed, gear, battPct, battRange,
+    tempInside, tempOutside, lat, lon,
+    power, odometer, chargeRate, isCharging, softwareVersion
+  };
+}
+
+function refreshTeslaData() {
+  const d = readTeslaData();
+  const hasAny = Object.values(d).some(v => v !== null && v !== undefined);
+
+  const statusEl = document.getElementById('tesla-data-status');
+  if (statusEl) {
+    statusEl.textContent = hasAny ? '● Dados ao vivo' : '● Sem dados (fora do Tesla)';
+    statusEl.className = 'tesla-data-status' + (hasAny ? ' live' : '');
+  }
+
+  // Bateria
+  const battPct = d.battPct !== null ? Math.round(parseFloat(d.battPct)) : null;
+  const battEl = document.getElementById('tesla-batt-pct');
+  const barEl = document.getElementById('tesla-batt-bar');
+  if (battEl) battEl.textContent = battPct !== null ? battPct + '%' : '--%';
+  if (barEl) {
+    const pct = battPct ?? 0;
+    barEl.style.width = pct + '%';
+    barEl.className = 'battery-bar-fill' + (pct < 20 ? ' danger' : pct < 40 ? ' warn' : '');
+  }
+
+  // Atualizar HUD de modo com base no gear real
+  const gear = d.gear;
+  const isDriving = gear && gear !== 'P' && gear !== 'park' && gear !== '' && gear !== null;
+  if (!simActive) {
+    const hudMode = document.getElementById('hud-mode');
+    if (hudMode) {
+      if (isDriving) {
+        hudMode.textContent = gear === 'R' ? 'REVERSE' : 'DRIVING';
+        hudMode.className = 'hud-value warn';
+        document.getElementById('drive-banner')?.classList.add('show');
+      } else if (gear !== null) {
+        hudMode.textContent = 'PARKED';
+        hudMode.className = 'hud-value';
+        document.getElementById('drive-banner')?.classList.remove('show');
+      }
+    }
+  }
+
+  // Grelha de dados
+  const grid = document.getElementById('tesla-data-grid');
+  if (!grid) return;
+
+  const fmt = (v, decimals = 0) => {
+    if (v === null || v === undefined) return null;
+    const n = parseFloat(v);
+    return isNaN(n) ? String(v) : n.toFixed(decimals);
+  };
+
+  const speedVal = fmt(d.speed, 0);
+  const items = [
+    {
+      icon: '🚗', label: 'VELOCIDADE', unit: 'km/h',
+      value: speedVal,
+      cls: speedVal !== null && parseFloat(speedVal) > 0 ? 'warn' : ''
+    },
+    {
+      icon: '⚙️', label: 'MARCHA', unit: '',
+      value: d.gear || null,
+      cls: d.gear && d.gear !== 'P' ? 'warn' : ''
+    },
+    {
+      icon: '🔋', label: 'BATERIA', unit: '%',
+      value: battPct !== null ? String(battPct) : null
+    },
+    {
+      icon: '📏', label: 'AUTONOMIA', unit: 'km',
+      value: fmt(d.battRange, 0)
+    },
+    {
+      icon: '🌡️', label: 'TEMP INT.', unit: '°C',
+      value: fmt(d.tempInside, 1)
+    },
+    {
+      icon: '🌤️', label: 'TEMP EXT.', unit: '°C',
+      value: fmt(d.tempOutside, 1)
+    },
+    {
+      icon: '⚡', label: 'POTÊNCIA', unit: 'kW',
+      value: fmt(d.power, 0),
+      cls: d.power && parseFloat(d.power) > 0 ? 'warn' : ''
+    },
+    {
+      icon: '📍', label: 'LATITUDE', unit: '',
+      value: fmt(d.lat, 5)
+    },
+    {
+      icon: '📍', label: 'LONGITUDE', unit: '',
+      value: fmt(d.lon, 5)
+    },
+    {
+      icon: '🔢', label: 'ODÓMETRO', unit: 'km',
+      value: fmt(d.odometer, 0)
+    },
+    {
+      icon: '🔌', label: 'CARGA', unit: 'A',
+      value: d.isCharging === 'Charging' ? fmt(d.chargeRate, 1) : (d.isCharging || null)
+    },
+    {
+      icon: '💾', label: 'SOFTWARE', unit: '',
+      value: d.softwareVersion ? String(d.softwareVersion).slice(0, 10) : null
+    },
+  ];
+
+  grid.innerHTML = '';
+  items.forEach(item => {
+    const isNA = item.value === null || item.value === undefined;
+    const card = document.createElement('div');
+    card.className = 'tesla-data-card';
+    card.innerHTML = `
+      <div class="tdc-icon">${item.icon}</div>
+      <div class="tdc-label">${item.label}</div>
+      <div class="tdc-value${item.cls ? ' ' + item.cls : ''}${isNA ? ' na' : ''}">
+        ${isNA ? 'n/d' : item.value}
+      </div>
+      ${!isNA && item.unit ? `<div class="tdc-unit">${item.unit}</div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// Inicia atualização automática
+refreshTeslaData();
+setInterval(refreshTeslaData, 2000);
 
 // ════════════════════════════════════════
 // LOCAL VIDEO
@@ -2312,6 +2566,7 @@ function playIptvChannel(index) {
   document.getElementById('iptv-np-title').textContent = ch.name || 'Canal';
   document.getElementById('iptv-np-group').textContent = ch.group || '';
 
+  video._bypassInstalled = false; // reset para reinstalar bypass no novo canal
   installBypass(video, iptvPaused);
   video.addEventListener('click', () => { iptvPaused.value = !video.paused; });
   ensureAudio(video);
