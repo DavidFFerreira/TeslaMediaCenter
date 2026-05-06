@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Tesla TV Demo</title>
+
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.header {
+  padding: 10px;
+  text-align: center;
+  font-size: 16px;
+  background: #111;
+}
+
+.player-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 85vh;
+}
+
+canvas {
+  width: 92vw;
+  max-height: 75vh;
+  background: black;
+  border: 1px solid #333;
+}
+
+.controls {
+  margin-top: 10px;
+}
+
+button {
+  background: #222;
+  color: white;
+  border: 1px solid #444;
+  padding: 10px 14px;
+  margin: 5px;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🚗 TeslaTV-like Demo Player</div>
+
+<div class="player-container">
+  <canvas id="screen"></canvas>
+
+  <div class="controls">
+    <button onclick="loadVideo()">Load</button>
+    <button onclick="playVideo()">Play</button>
+    <button onclick="pauseVideo()">Pause</button>
+  </div>
+</div>
+
+<!-- vídeo escondido (não usado diretamente na UI) -->
+<video id="video" muted playsinline style="display:none;"></video>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("screen");
+const ctx = canvas.getContext("2d");
+
+// vídeo demo público leve
+const VIDEO_URL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
+// setup
+video.src = VIDEO_URL;
+video.crossOrigin = "anonymous";
+video.muted = true;
+video.playsInline = true;
+
+// ajustar canvas
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight * 0.75;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// desenhar frames no canvas (modo “TeslaTV-like”)
+function render() {
+  if (!video.paused && !video.ended) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  }
+  requestAnimationFrame(render);
+}
+render();
+
+function loadVideo() {
+  video.load();
+}
+
+function playVideo() {
+  video.play().catch(err => console.log("Play bloqueado:", err));
+}
+
+function pauseVideo() {
+  video.pause();
+}
+
+// keep-alive leve
+setInterval(() => {
+  if (!video.paused && !video.ended) {
+    video.currentTime += 0;
+  }
+}, 5000);
+</script>
+
+</body>
+</html>
