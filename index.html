@@ -2078,6 +2078,34 @@ let ytCurrentTitle = 'lofi hip hop radio — beats to relax/study';
 let ytSearchResults = [];
 let ytSelectedIndex = -1;
 
+// Instâncias públicas Invidious com CORS aberto — tentadas por ordem
+const INVIDIOUS_INSTANCES = [
+  'https://invidious.privacydev.net',
+  'https://yt.cdaut.de',
+  'https://invidious.nerdvpn.de',
+  'https://inv.tux.pizza',
+  'https://invidious.fdn.fr',
+];
+
+async function ytSearchInvidious(query) {
+  for (const base of INVIDIOUS_INSTANCES) {
+    try {
+      const url = `${base}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title,author,videoThumbnails&pretty=0`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) continue;
+      return data.slice(0, 12).map(v => ({
+        id: v.videoId,
+        title: v.title || 'Sem título',
+        channel: v.author || '',
+        thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+      }));
+    } catch(e) { /* tenta próxima instância */ }
+  }
+  return null; // todas falharam
+}
+
 async function ytSearch() {
   const query = document.getElementById('yt-search-input').value.trim();
   if (!query) return;
@@ -2091,42 +2119,19 @@ async function ytSearch() {
   resultsEl.innerHTML = '<div class="yt-results-loading"><div class="pin-spinner" style="border-top-color:var(--accent)"></div><span>A pesquisar no YouTube...</span></div>';
 
   try {
-    // Use YouTube's suggest/search API via a CORS proxy approach
-    // We'll use the YouTube oEmbed + search suggestions as a workaround
-    // Fetch search results via YouTube's internal suggest endpoint (returns JSON)
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + '&sp=EgIQAQ%3D%3D')}`;
-    const res = await fetch(proxyUrl);
-    const html = await res.text();
+    const results = await ytSearchInvidious(query);
 
-    // Extract ytInitialData from the HTML
-    const match = html.match(/var ytInitialData = ({.*?});<\/script>/s) ||
-                  html.match(/ytInitialData\s*=\s*({.+?});\s*(?:var|window|<\/script)/s);
-
-    if (!match) throw new Error('Não foi possível obter resultados.');
-
-    const data = JSON.parse(match[1]);
-    const contents = data?.contents?.twoColumnSearchResultsRenderer
-      ?.primaryContents?.sectionListRenderer?.contents?.[0]
-      ?.itemSectionRenderer?.contents || [];
-
-    ytSearchResults = contents
-      .filter(item => item.videoRenderer)
-      .map(item => {
-        const v = item.videoRenderer;
-        return {
-          id: v.videoId,
-          title: v.title?.runs?.[0]?.text || 'Sem título',
-          channel: v.ownerText?.runs?.[0]?.text || '',
-          thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-        };
-      }).slice(0, 12);
-
-    renderYtResults(ytSearchResults, query);
+    if (results && results.length) {
+      ytSearchResults = results;
+      renderYtResults(ytSearchResults, query);
+    } else {
+      throw new Error('sem resultados');
+    }
   } catch(e) {
-    // Fallback: use invidious or show manual input
+    // Fallback final: campo para colar URL/ID diretamente
     resultsEl.innerHTML = `
       <div class="yt-results-empty">
-        ⚠ Não foi possível pesquisar automaticamente (CORS).<br><br>
+        ⚠ Pesquisa indisponível de momento (todas as instâncias Invidious offline).<br><br>
         <span style="color:var(--text)">Cola diretamente um URL ou ID do YouTube:</span><br>
         <div style="display:flex;gap:8px;margin-top:10px">
           <input class="yt-search-input" id="yt-direct-id" placeholder="URL ou ID do vídeo (ex: dQw4w9WgXcQ)" style="font-size:12px">
