@@ -267,28 +267,6 @@ Direct stream sem transcodificação — desde que o formato seja compatível co
 
 ---
 
-## Publicar no GitHub Pages
-
-```
-Repositório → Settings → Pages → Deploy from branch → main / (root) → Save
-```
-
-URL resultante: `https://SEU-USERNAME.github.io/TeslaMediaCenter`
-
-O site é um **ficheiro HTML único** — basta colocar o `index.html` na raiz do repositório.
-
----
-
-## Estrutura do projeto
-
-```
-TeslaMediaCenter/
-├── index.html     ← tudo aqui: HTML + CSS + JS, zero dependências
-└── README.md
-```
-
----
-
 ## Compatibilidade
 
 | Contexto | Estado |
@@ -304,6 +282,3 @@ TeslaMediaCenter/
 
 Este projeto é apenas para fins educativos e de entretenimento como passageiro. Não uses o ecrã do Tesla para ver vídeo enquanto és tu a conduzir — é ilegal e perigoso.
 
----
-
-Ficheiro único HTML · Zero dependências · Zero servidor · Zero registo
